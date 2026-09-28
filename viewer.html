@@ -3,11 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Panorama Viewer</title>
+  <title>Panorama Viewer - VR Lazy HUD</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
   <script>
-    // 20° VR-Snap-Turn Komponente
+    // ---------- 1. KOMPONENTE: LAZY HUD / DAMPED FOLLOW FÜR VR ----------
+    AFRAME.registerComponent('lazy-hud', {
+      schema: {
+        distance: { type: 'number', default: 1.2 },  // Abstand vor der Kamera (Meter)
+        speed: { type: 'number', default: 0.05 },     // Dämpfung/Geschwindigkeit (0.01 = sehr träge, 0.1 = schnell)
+        offsetX: { type: 'number', default: -0.45 },  // Versatz nach links
+        offsetY: { type: 'number', default: 0.15 }    // Versatz nach oben
+      },
+      init: function () {
+        this.cam = document.querySelector('#cam');
+        this.targetPos = new THREE.Vector3();
+        this.targetRot = new THREE.Quaternion();
+        this.camWorldPos = new THREE.Vector3();
+        this.camWorldRot = new THREE.Quaternion();
+      },
+      tick: function () {
+        if (!this.cam) return;
+
+        // Position und Rotation der Kamera ermitteln
+        this.cam.object3D.getWorldPosition(this.camWorldPos);
+        this.cam.object3D.getWorldQuaternion(this.camWorldRot);
+
+        // Zielposition im Raum berechnen (relativ zur Blickrichtung)
+        const offset = new THREE.Vector3(this.data.offsetX, this.data.offsetY, -this.data.distance);
+        offset.applyQuaternion(this.camWorldRot);
+        this.targetPos.copy(this.camWorldPos).add(offset);
+
+        // Sanfte Annäherung der Position (Linear Interpolation)
+        this.el.object3D.position.lerp(this.targetPos, this.data.speed);
+
+        // Sanfte Annäherung der Rotation (Spherical Linear Interpolation)
+        this.el.object3D.quaternion.slerp(this.camWorldRot, this.data.speed);
+      }
+    });
+
+    // ---------- 2. KOMPONENTE: 20° VR-SNAP-TURN ----------
     AFRAME.registerComponent('vr-snap-turn', {
       schema: {
         angle: { type: 'number', default: 20 },
@@ -57,7 +92,7 @@
       background: #000;
     }
 
-    /* HUD OVERLAY LAYOUT */
+    /* 2D HUD OVERLAY (Desktop & Mobile) */
     #hud-overlay {
       position: absolute;
       top: 0;
@@ -181,7 +216,7 @@
 </head>
 <body>
 
-  <!-- HUD OVERLAY -->
+  <!-- 2D HUD OVERLAY FOR SCREEN MODE -->
   <div id="hud-overlay">
     <div class="hud-panel-left" id="hudMenu">
       <h4>PANO SELECT</h4>
@@ -197,17 +232,29 @@
     <button class="hud-back-btn" onclick="window.location.href='index.html'">← BACK TO INDEX</button>
   </div>
 
-  <!-- A-FRAME SCENE -->
+  <!-- A-FRAME 3D SCENE -->
   <a-scene
     id="scene"
     vr-mode-ui="enabled: true"
     renderer="antialias: true; colorManagement: true"
     background="color: #000"
   >
+    <!-- PANORAMA SKY -->
     <a-entity id="pano-container" position="0 1.6 0">
       <a-sky id="sky" radius="500" position="0 0 0" class="clickable"></a-sky>
     </a-entity>
 
+    <!-- 3D LAZY VR HUD (Wird sanft gedämpft im VR-Raum mitgeführt) -->
+    <a-entity id="vr-hud-group" lazy-hud="distance: 1.2; speed: 0.05; offsetX: -0.45; offsetY: 0.15" visible="false">
+      <!-- Visier Panel-Hintergrund -->
+      <a-plane width="0.38" height="0.55" material="color: #0a141e; opacity: 0.65; transparent: true; shader: flat" border="color: #00f0ff"></a-plane>
+      <a-text value="PANO SELECT" position="0 0.22 0.01" align="center" width="0.8" color="#00f0ff" font="monoid"></a-text>
+
+      <!-- Container für dynamische 3D VR-Buttons -->
+      <a-entity id="vr-buttons-container" position="0 0.1 0.01"></a-entity>
+    </a-entity>
+
+    <!-- CAMERA RIG -->
     <a-entity id="rig" position="0 0 0">
       <a-camera
         id="cam"
@@ -230,31 +277,41 @@
       const project = urlParams.get('project');
       const count = parseInt(urlParams.get('count')) || 0;
 
+      const scene = document.querySelector('a-scene');
       const sky = document.querySelector('#sky');
       const hudOverlay = document.getElementById('hud-overlay');
       const hudMenu = document.getElementById('hudMenu');
+      const vrHudGroup = document.getElementById('vr-hud-group');
+      const vrButtonsContainer = document.getElementById('vr-buttons-container');
 
-      // Helper: Prüft, ob Bild mit .jpg oder .JPG geladen werden kann
+      // Modus-Wechsel: Bei VR-Eintritt wird 2D HUD verborgen & 3D Lazy HUD aktiviert
+      scene.addEventListener('enter-vr', function () {
+        hudOverlay.style.display = 'none';
+        if (!isCustom) vrHudGroup.setAttribute('visible', 'true');
+      });
+
+      scene.addEventListener('exit-vr', function () {
+        if (!isCustom) hudOverlay.style.display = 'flex';
+        vrHudGroup.setAttribute('visible', 'false');
+      });
+
+      // Hilfsfunktion: Lade-Fallback für Dateiendungen
       function setSkySourceWithFallback(basePath) {
         const img = new Image();
         const primaryPath = `${basePath}.jpg`;
         const fallbackPath = `${basePath}.JPG`;
 
-        img.onload = function() {
-          sky.setAttribute('src', primaryPath);
-        };
-        img.onerror = function() {
-          sky.setAttribute('src', fallbackPath);
-        };
+        img.onload = function() { sky.setAttribute('src', primaryPath); };
+        img.onerror = function() { sky.setAttribute('src', fallbackPath); };
         img.src = primaryPath;
       }
 
-      // 1. Eigenes Panorama aus IndexedDB laden
+      // 1. Eigenes Panorama laden (IndexedDB)
       if (isCustom) {
-        hudOverlay.style.display = 'none'; // Menü & HUD ausblenden
+        hudOverlay.style.display = 'none';
+        vrHudGroup.setAttribute('visible', 'false');
 
         const request = indexedDB.open('PanoramaDB', 1);
-
         request.onsuccess = function(e) {
           const db = e.target.result;
           const tx = db.transaction('images', 'readonly');
@@ -271,16 +328,10 @@
             }
           };
         };
-
-        request.onerror = function() {
-          alert('Fehler beim Öffnen der Datenbank.');
-          window.location.href = 'index.html';
-        };
-
         return;
       }
 
-      // 2. Projekt-Panoramen (Teufelsberg / Karlshorst)
+      // 2. Projekt-Panoramen laden
       if (project && count > 0) {
         function loadProjectPanorama(index) {
           const formattedIndex = String(index).padStart(2, '0');
@@ -288,21 +339,62 @@
           
           setSkySourceWithFallback(basePath);
 
+          // Update 2D-Buttons
           document.querySelectorAll('.hud-btn').forEach((btn, idx) => {
+            if (idx + 1 === index) btn.classList.add('active');
+            else btn.classList.remove('active');
+          });
+
+          // Update 3D-Buttons (VR)
+          document.querySelectorAll('.vr-btn-plane').forEach((btn, idx) => {
             if (idx + 1 === index) {
-              btn.classList.add('active');
+              btn.setAttribute('material', 'color: #00f0ff; opacity: 0.8');
             } else {
-              btn.classList.remove('active');
+              btn.setAttribute('material', 'color: #0a141e; opacity: 0.6');
             }
           });
         }
 
+        // Generiere Buttons dynamisch für 2D-Overlay UND 3D VR Lazy HUD
         for (let i = 1; i <= count; i++) {
-          const btn = document.createElement('button');
-          btn.className = 'hud-btn';
-          btn.innerText = `PANO_0${i}`;
-          btn.onclick = () => loadProjectPanorama(i);
-          hudMenu.appendChild(btn);
+          // A) 2D HTML Button
+          const btn2d = document.createElement('button');
+          btn2d.className = 'hud-btn';
+          btn2d.innerText = `PANO_0${i}`;
+          btn2d.onclick = () => loadProjectPanorama(i);
+          hudMenu.appendChild(btn2d);
+
+          // B) 3D VR Button Plane
+          const yPos = -(i - 1) * 0.09;
+          const vrBtnPlane = document.createElement('a-plane');
+          vrBtnPlane.setAttribute('class', 'clickable vr-btn-plane');
+          vrBtnPlane.setAttribute('position', `0 ${yPos} 0`);
+          vrBtnPlane.setAttribute('width', '0.3');
+          vrBtnPlane.setAttribute('height', '0.07');
+          vrBtnPlane.setAttribute('material', 'color: #0a141e; opacity: 0.6; transparent: true; shader: flat');
+
+          // Rand-Indikator
+          const vrBtnOutline = document.createElement('a-plane');
+          vrBtnOutline.setAttribute('width', '0.31');
+          vrBtnOutline.setAttribute('height', '0.08');
+          vrBtnOutline.setAttribute('position', '0 0 -0.001');
+          vrBtnOutline.setAttribute('material', 'color: #00f0ff; shader: flat');
+
+          // Text
+          const vrText = document.createElement('a-text');
+          vrText.setAttribute('value', `PANO 0${i}`);
+          vrText.setAttribute('align', 'center');
+          vrText.setAttribute('width', '0.7');
+          vrText.setAttribute('color', '#ffffff');
+          vrText.setAttribute('position', '0 0 0.01');
+
+          vrBtnPlane.appendChild(vrBtnOutline);
+          vrBtnPlane.appendChild(vrText);
+
+          // Click-Event im VR-Raum
+          vrBtnPlane.addEventListener('click', () => loadProjectPanorama(i));
+
+          vrButtonsContainer.appendChild(vrBtnPlane);
         }
 
         loadProjectPanorama(1);
