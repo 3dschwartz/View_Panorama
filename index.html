@@ -13,30 +13,33 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 #loader h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
 .progress-bar{width:min(320px,80vw);height:2px;background:#e0e0e0}
 .progress-fill{height:100%;background:#000000;width:0%;transition:width 0.3s ease}
-#loader-status{letter-spacing:0.15em;color:#666666}
+#loader-status{letter-spacing:0.15em;color:#666666;text-align:center;padding:0 20px}
+#loader-back-btn{display:none;margin-top:10px;padding:8px 20px;background:transparent;border:1px solid #000000;color:#000000;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer}
 
-/* ── Startseite im Index(1)-Stil ──────────────────────────── */
-#upload-screen{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:28px;z-index:90;overflow-y:auto;padding:40px 20px;touch-action:pan-y}
+/* ── Startseite & Projektansicht ──────────────────────────── */
+#upload-screen{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:24px;z-index:90;overflow-y:auto;padding:40px 20px;touch-action:pan-y}
 #upload-screen.hidden{display:none}
 #upload-screen h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
-#upload-screen .subtitle{letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-18px}
-#upload-screen .nav-hint{letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-14px}
+#upload-screen .subtitle{letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-14px}
+#upload-screen .nav-hint{letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-10px}
 
-.room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;width:min(620px,92vw)}
+.room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;width:min(640px,92vw)}
 .room-card{padding:18px 14px;background:transparent;border:1px solid #cccccc;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
 .room-card:hover,.room-card:active{border-color:#000000;background:rgba(0,0,0,0.04)}
-.room-card .room-category{letter-spacing:0.15em;color:#888888}
-.room-card .room-name{letter-spacing:0.1em;color:#000000}
-.room-card.active{border-color:#000000;background:rgba(0,0,0,0.05)}
+.room-card .room-category{letter-spacing:0.15em;color:#888888;text-transform:uppercase;font-size:12px}
+.room-card .room-name{letter-spacing:0.1em;color:#000000;font-weight:bold}
+
+.back-to-projects-btn{padding:8px 16px;background:transparent;border:1px solid #cccccc;color:#666666;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;transition:all 0.2s}
+.back-to-projects-btn:hover{border-color:#000000;color:#000000}
 
 .divider-small{width:min(320px,60vw);height:1px;background:#dddddd}
 
-#drop-zone{width:min(420px,85vw);height:70px;border:1px solid #cccccc;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
+#drop-zone{width:min(420px,85vw);height:60px;border:1px solid #cccccc;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
 #drop-zone:hover,#drop-zone.dragover{border-color:#000000;background:rgba(0,0,0,0.04)}
 #drop-zone p{letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
 #file-input{display:none}
 
-/* ── Overlay im Index(1)-Stil ────────────────────────────── */
+/* ── Overlay ────────────────────────────────────────────── */
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,0.94);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;z-index:50;backdrop-filter:blur(4px);transition:opacity 0.3s ease;overflow-y:auto;padding:40px 0;touch-action:pan-y}
 #overlay.hidden{opacity:0;pointer-events:none}
 #overlay h2{font-weight:400;letter-spacing:0.25em;text-transform:uppercase;color:#000000}
@@ -91,7 +94,6 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   cursor: default !important;
 }
 </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -99,16 +101,18 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   <h1>Panorama View</h1>
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
   <span id="loader-status">Panorama wird geladen ...</span>
+  <button id="loader-back-btn">Zurück zur Auswahl</button>
 </div>
 
 <!-- ── Startseite mit Panorama-Auswahl ──────────────────────────── -->
 <div id="upload-screen">
-  <h1>Panorama View</h1>
-  <p class="subtitle">Wähle ein Panorama oder lade deine eigene Datei hoch</p>
+  <h1 id="screen-title">Panorama View</h1>
+  <p class="subtitle" id="screen-subtitle">Wähle ein Projekt aus</p>
+  <button class="back-to-projects-btn" id="back-to-projects-btn" style="display:none;">&larr; Zurück zur Projektübersicht</button>
   <p class="nav-hint">PC: Maus ziehen zum Umschauen / VR: Blicksteuerung & Menü</p>
   
   <div class="room-grid" id="room-grid">
-    <!-- Panoramen werden dynamisch generiert -->
+    <!-- Projekte / Panoramen werden dynamisch generiert -->
   </div>
   
   <div class="divider-small"></div>
@@ -169,36 +173,55 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-// ── Beispieldaten Bank ───────────────────────────────────────────
-const PANORAMAS = [
-  { category: 'Panorama', name: 'Beispiel 1', file: 'example_01.jpg', brightness: 1.0, fov: 75 },
-  { category: 'Panorama', name: 'Beispiel 2', file: 'example_02.jpg', brightness: 1.0, fov: 75 }
+// ── Projekt- & Panorama-Struktur ─────────────────────────────────
+const PROJECTS = [
+  {
+    name: 'Karlshorst',
+    panoramas: [
+      { name: 'Pano 01', file: 'Karlshorst/Pano_01.jpg' },
+      { name: 'Pano 02', file: 'Karlshorst/Pano_02.jpg' },
+      { name: 'Pano 03', file: 'Karlshorst/Pano_03.jpg' },
+      { name: 'Pano 04', file: 'Karlshorst/Pano_04.jpg' }
+    ]
+  },
+  {
+    name: 'Teufelsberg',
+    panoramas: [
+      { name: 'Pano 01', file: 'Teufelsberg/Pano_01.jpg' },
+      { name: 'Pano 02', file: 'Teufelsberg/Pano_02.jpg' }
+    ]
+  }
 ];
 
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 // DOM Elements
-const canvas       = document.getElementById('canvas');
-const loaderEl     = document.getElementById('loader');
-const uploadScreen = document.getElementById('upload-screen');
-const overlayEl    = document.getElementById('overlay');
-const overlayTitle = document.getElementById('overlay-title');
-const crosshair    = document.getElementById('crosshair');
-const escHint      = document.getElementById('esc-hint');
-const progressBar  = document.getElementById('progress-fill');
-const statusText   = document.getElementById('loader-status');
-const startBtn     = document.getElementById('start-btn');
-const newFileBtn   = document.getElementById('new-file-btn');
-const fileInput    = document.getElementById('file-input');
-const dropZone     = document.getElementById('drop-zone');
-const bSlider      = document.getElementById('brightness-slider');
-const bVal         = document.getElementById('brightness-value');
-const fovSlider    = document.getElementById('fov-slider');
-const fovVal       = document.getElementById('fov-value');
-const bgColor      = document.getElementById('bg-color');
-const pauseBtn     = document.getElementById('pause-btn');
-const infoEl       = document.getElementById('info');
-const roomGrid     = document.getElementById('room-grid');
+const canvas          = document.getElementById('canvas');
+const loaderEl        = document.getElementById('loader');
+const loaderBackBtn   = document.getElementById('loader-back-btn');
+const uploadScreen    = document.getElementById('upload-screen');
+const overlayEl       = document.getElementById('overlay');
+const overlayTitle    = document.getElementById('overlay-title');
+const crosshair       = document.getElementById('crosshair');
+const escHint         = document.getElementById('esc-hint');
+const progressBar     = document.getElementById('progress-fill');
+const statusText      = document.getElementById('loader-status');
+const startBtn        = document.getElementById('start-btn');
+const newFileBtn      = document.getElementById('new-file-btn');
+const fileInput       = document.getElementById('file-input');
+const dropZone        = document.getElementById('drop-zone');
+const bSlider         = document.getElementById('brightness-slider');
+const bVal            = document.getElementById('brightness-value');
+const fovSlider       = document.getElementById('fov-slider');
+const fovVal          = document.getElementById('fov-value');
+const bgColor         = document.getElementById('bg-color');
+const pauseBtn        = document.getElementById('pause-btn');
+const roomGrid        = document.getElementById('room-grid');
+const screenTitle     = document.getElementById('screen-title');
+const screenSubtitle  = document.getElementById('screen-subtitle');
+const backToProjBtn   = document.getElementById('back-to-projects-btn');
+
+let currentProject = null;
 
 // ── Renderer ─────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -218,12 +241,11 @@ scene.background = new THREE.Color(0xffffff);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-// Rig für Kamera im VR-Modus
 const vrDolly = new THREE.Object3D();
 scene.add(vrDolly);
 vrDolly.add(camera);
 
-// ── VR MENÜ: Starr, unbeweglich am Bildrand, ohne Kästen/Rand, halbtransparent
+// ── VR MENÜ ──────────────────────────────────────────────────────
 const vrMenuCanvas = document.createElement('canvas');
 vrMenuCanvas.width = 512;
 vrMenuCanvas.height = 256;
@@ -233,18 +255,17 @@ const vrMenuTexture = new THREE.CanvasTexture(vrMenuCanvas);
 const vrMenuMaterial = new THREE.SpriteMaterial({
   map: vrMenuTexture,
   transparent: true,
-  opacity: 0.55, // Halbdurchsichtig
+  opacity: 0.55,
   depthTest: false,
   depthWrite: false
 });
 
 const vrMenuSprite = new THREE.Sprite(vrMenuMaterial);
-// Ausrichtung starr am oberen Bildrand fixiert
 vrMenuSprite.scale.set(0.6, 0.3, 1);
 vrMenuSprite.position.set(0, 0.25, -0.8); 
 vrMenuSprite.renderOrder = 999;
 vrMenuSprite.visible = false;
-camera.add(vrMenuSprite); // Starr an Kamera gekoppelt
+camera.add(vrMenuSprite);
 
 function updateVRMenu(lines) {
   if (!renderer.xr.isPresenting) {
@@ -253,26 +274,22 @@ function updateVRMenu(lines) {
   }
   vrMenuSprite.visible = true;
   vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
-  
-  // NUR schwarzer Text ohne Hintergrundkasten/Rand
   vrMenuCtx.fillStyle = '#000000';
   vrMenuCtx.font = '24px Arial, sans-serif';
-  
   lines.forEach((line, i) => {
     vrMenuCtx.fillText(line, 20, 40 + i * 36);
   });
-  
   vrMenuTexture.needsUpdate = true;
 }
 
 // ── Panorama Kugel Geometry ──────────────────────────────────────
 const sphereGeo = new THREE.SphereGeometry(500, 60, 40);
-sphereGeo.scale(-1, 1, 1); // Innenseite anzeigen
+sphereGeo.scale(-1, 1, 1);
 const sphereMat = new THREE.MeshBasicMaterial();
 const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(sphereMesh);
 
-// ── Drag & Rotation Controls (Desktop/Touch) ─────────────────────
+// ── Drag & Rotation Controls ─────────────────────────────────────
 let isUserInteracting = false;
 let onPointerDownPointerX = 0, onPointerDownPointerY = 0;
 let lon = 0, onPointerDownLon = 0;
@@ -305,7 +322,7 @@ canvas.addEventListener('pointerdown', onPointerStart);
 canvas.addEventListener('pointermove', onPointerMove);
 canvas.addEventListener('pointerup', onPointerEnd);
 
-// ── UI Interaktionen & Regler ────────────────────────────────────
+// ── UI Interaktionen ─────────────────────────────────────────────
 bSlider.addEventListener('input', () => {
   const v = parseFloat(bSlider.value);
   bVal.textContent = v.toFixed(1);
@@ -351,23 +368,57 @@ newFileBtn.addEventListener('click', () => {
   uploadScreen.classList.remove('hidden');
 });
 
-// ── Raumliste Aufbauen ───────────────────────────────────────────
-function buildRoomCards() {
+loaderBackBtn.addEventListener('click', () => {
+  loaderEl.classList.add('hidden');
+  uploadScreen.classList.remove('hidden');
+});
+
+backToProjBtn.addEventListener('click', renderProjectOverview);
+
+// ── Menü-Navigation (Projekte & Panoramen) ───────────────────────
+function renderProjectOverview() {
+  currentProject = null;
+  screenTitle.textContent = 'Panorama View';
+  screenSubtitle.textContent = 'Wähle ein Projekt aus';
+  backToProjBtn.style.display = 'none';
   roomGrid.innerHTML = '';
-  PANORAMAS.forEach((item, index) => {
+
+  PROJECTS.forEach((project) => {
     const card = document.createElement('div');
     card.className = 'room-card';
-    card.dataset.index = index;
-    card.innerHTML = `<span class="room-category">${item.category}</span><span class="room-name">${item.name}</span>`;
+    card.innerHTML = `
+      <span class="room-category">Projekt</span>
+      <span class="room-name">${project.name}</span>
+      <span style="color:#888; font-size:12px;">${project.panoramas.length} Panoramen</span>
+    `;
+    card.addEventListener('click', () => renderPanoramaOverview(project));
+    roomGrid.appendChild(card);
+  });
+}
+
+function renderPanoramaOverview(project) {
+  currentProject = project;
+  screenTitle.textContent = project.name;
+  screenSubtitle.textContent = 'Wähle ein Panorama';
+  backToProjBtn.style.display = 'inline-block';
+  roomGrid.innerHTML = '';
+
+  project.panoramas.forEach((pano) => {
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    card.innerHTML = `
+      <span class="room-category">${project.name}</span>
+      <span class="room-name">${pano.name}</span>
+    `;
     card.addEventListener('click', () => {
-      document.querySelectorAll('.room-card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      loadPanorama(item.file, item.name);
+      loadPanorama(pano.file, `${project.name} – ${pano.name}`);
     });
     roomGrid.appendChild(card);
   });
 }
-buildRoomCards();
+
+// Initialisieren
+renderProjectOverview();
 
 // ── Bild Laden ───────────────────────────────────────────────────
 const textureLoader = new THREE.TextureLoader();
@@ -375,8 +426,9 @@ const textureLoader = new THREE.TextureLoader();
 function loadPanorama(url, displayName) {
   uploadScreen.classList.add('hidden');
   loaderEl.classList.remove('hidden');
+  loaderBackBtn.style.display = 'none';
   progressBar.style.width = '30%';
-  statusText.textContent = 'Bild laden ...';
+  statusText.textContent = 'Bild wird geladen...';
 
   textureLoader.load(
     url,
@@ -395,9 +447,11 @@ function loadPanorama(url, displayName) {
         progressBar.style.width = p.toFixed(0) + '%';
       }
     },
-    () => {
-      loaderEl.classList.add('hidden');
-      uploadScreen.classList.remove('hidden');
+    (err) => {
+      console.error('Fehler beim Laden:', err);
+      progressBar.style.width = '0%';
+      statusText.textContent = `Datei "${url}" konnte nicht geladen werden. Bitte Dateipfad/Großschreibung prüfen.`;
+      loaderBackBtn.style.display = 'inline-block';
     }
   );
 }
@@ -420,12 +474,9 @@ function loadFile(file) {
 }
 
 // ── Main Render Loop ─────────────────────────────────────────────
-let animRunning = false;
-
 function animate() {
   renderer.setAnimationLoop(() => {
     if (renderer.xr.isPresenting) {
-      // VR Menü mit schwarzem Text rendern
       updateVRMenu([
         'PANORAMA VIEW VR',
         '-------------------',
@@ -433,7 +484,6 @@ function animate() {
         'Trigger: Auswählen'
       ]);
     } else {
-      // Kameraposition im normalen Modus berechnen
       lat = Math.max(-85, Math.min(85, lat));
       phi = THREE.MathUtils.degToRad(90 - lat);
       theta = THREE.MathUtils.degToRad(lon);
