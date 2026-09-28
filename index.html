@@ -1,243 +1,461 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panorama View</title>
-  <style>
-    :root {
-      --bg-color: #0d1117;
-      --card-bg: #161b22;
-      --border-color: #30363d;
-      --accent-color: #00f0ff;
-      --text-main: #f0f6fc;
-      --text-sub: #8b949e;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Panorama View</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;font-size:14px;overflow:hidden;height:100dvh;touch-action:none}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+#loader{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;transition:opacity 0.6s ease}
+#loader.hidden{opacity:0;pointer-events:none}
+#loader h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
+.progress-bar{width:min(320px,80vw);height:2px;background:#e0e0e0}
+.progress-fill{height:100%;background:#000000;width:0%;transition:width 0.3s ease}
+#loader-status{letter-spacing:0.15em;color:#666666}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem;
-    }
+/* ── Startseite im Index(1)-Stil ──────────────────────────── */
+#upload-screen{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:28px;z-index:90;overflow-y:auto;padding:40px 20px;touch-action:pan-y}
+#upload-screen.hidden{display:none}
+#upload-screen h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
+#upload-screen .subtitle{letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-18px}
+#upload-screen .nav-hint{letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-14px}
 
-    header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
+.room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;width:min(620px,92vw)}
+.room-card{padding:18px 14px;background:transparent;border:1px solid #cccccc;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
+.room-card:hover,.room-card:active{border-color:#000000;background:rgba(0,0,0,0.04)}
+.room-card .room-category{letter-spacing:0.15em;color:#888888}
+.room-card .room-name{letter-spacing:0.1em;color:#000000}
+.room-card.active{border-color:#000000;background:rgba(0,0,0,0.05)}
 
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: var(--accent-color);
-      text-transform: uppercase;
-      text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-      margin-bottom: 0.5rem;
-    }
+.divider-small{width:min(320px,60vw);height:1px;background:#dddddd}
 
-    p.subtitle {
-      color: var(--text-sub);
-      font-size: 1rem;
-    }
+#drop-zone{width:min(420px,85vw);height:70px;border:1px solid #cccccc;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
+#drop-zone:hover,#drop-zone.dragover{border-color:#000000;background:rgba(0,0,0,0.04)}
+#drop-zone p{letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
+#file-input{display:none}
 
-    .container {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
+/* ── Overlay im Index(1)-Stil ────────────────────────────── */
+#overlay{position:fixed;inset:0;background:rgba(255,255,255,0.94);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;z-index:50;backdrop-filter:blur(4px);transition:opacity 0.3s ease;overflow-y:auto;padding:40px 0;touch-action:pan-y}
+#overlay.hidden{opacity:0;pointer-events:none}
+#overlay h2{font-weight:400;letter-spacing:0.25em;text-transform:uppercase;color:#000000}
+.controls-hint{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;letter-spacing:0.08em;color:#888888;line-height:1.7}
+.controls-hint .key{color:#000000;text-align:right}
+.settings-grid{display:grid;grid-template-columns:auto minmax(90px,140px) auto;column-gap:10px;row-gap:10px;align-items:center;width:min(320px,88vw)}
+.settings-grid label{letter-spacing:0.1em;color:#888888;text-transform:uppercase;text-align:left;white-space:nowrap}
+.settings-grid input[type=range]{width:100%;accent-color:#000000;cursor:pointer}
+.settings-grid span{color:#000000;text-align:left;font-size:inherit;white-space:nowrap}
+.divider{width:min(320px,88vw);height:1px;background:#dddddd;margin:2px 0}
+.btn-row{display:flex;gap:12px;margin-top:4px}
+.start-btn{padding:10px 32px;background:transparent;border:1px solid #000000;color:#000000;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,color 0.2s}
+.start-btn:hover,.start-btn:active{background:#000000;color:#ffffff}
+.new-file-btn{padding:10px 20px;background:transparent;border:1px solid #cccccc;color:#555555;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:border-color 0.2s,color 0.2s}
+.new-file-btn:hover,.new-file-btn:active{border-color:#888888;color:#888888}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-    }
+/* Fadenkreuz */
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
+#crosshair.visible{opacity:0.6}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:#000000}
+#crosshair::before{width:1px;height:100%;left:50%;top:0}
+#crosshair::after{width:100%;height:1px;top:50%;left:0}
 
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.5rem;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      overflow: hidden;
-    }
+#canvas{display:block;position:fixed;inset:0}
 
-    .card:hover {
-      border-color: var(--accent-color);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 240, 255, 0.15);
-    }
+#esc-hint{position:fixed;top:14px;right:16px;letter-spacing:0.15em;color:#555555;text-transform:uppercase;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
+#esc-hint.visible{opacity:1}
 
-    .card h3 {
-      font-size: 1.3rem;
-      margin-bottom: 0.5rem;
-      color: #fff;
-    }
+#pause-btn{position:fixed;top:14px;right:16px;z-index:30;display:none;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#888888;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
 
-    .card p {
-      color: var(--text-sub);
-      font-size: 0.9rem;
-      margin-bottom: 1.5rem;
-    }
+#info{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);letter-spacing:0.15em;color:#666666;text-transform:uppercase;pointer-events:none;z-index:10}
 
-    .badge {
-      align-self: flex-start;
-      background: rgba(0, 240, 255, 0.1);
-      color: var(--accent-color);
-      border: 1px solid var(--accent-color);
-      padding: 0.25rem 0.6rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    .upload-zone {
-      background: var(--card-bg);
-      border: 2px dashed var(--border-color);
-      border-radius: 12px;
-      padding: 3rem 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-
-    .upload-zone:hover, .upload-zone.dragover {
-      border-color: var(--accent-color);
-      background: rgba(0, 240, 255, 0.03);
-    }
-
-    .upload-zone p {
-      color: var(--text-sub);
-      font-size: 1rem;
-    }
-
-    .upload-zone strong {
-      color: var(--accent-color);
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-  </style>
+/* VR-Button Integration in Index-Stil */
+#VRButton {
+  position: static !important;
+  background: transparent !important;
+  border: 1px solid #000000 !important;
+  color: #000000 !important;
+  letter-spacing: 0.25em !important;
+  text-transform: uppercase !important;
+  padding: 10px 32px !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+  transition: background 0.2s, color 0.2s;
+}
+#VRButton:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+#VRButton:disabled {
+  opacity: 0.4 !important;
+  cursor: default !important;
+}
+</style>
+<base target="_blank">
 </head>
 <body>
 
-  <header>
-    <h1>Panorama View</h1>
-    <p class="subtitle">Interaktiver WebXR 360° Panorama Viewer</p>
-  </header>
+<div id="loader" class="hidden">
+  <h1>Panorama View</h1>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <span id="loader-status">Panorama wird geladen ...</span>
+</div>
 
-  <div class="container">
-    <div class="grid">
-      <!-- Projekt 1: Teufelsberg -->
-      <div class="card" onclick="openProject('teufelsberg', 4)">
-        <div>
-          <h3>landscape Teufelsberg</h3>
-          <p>4 Panorama-Standorte verfügbar</p>
-        </div>
-        <span class="badge">4 Panoramen</span>
-      </div>
-
-      <!-- Projekt 2: Karlshorst -->
-      <div class="card" onclick="openProject('karlshorst', 2)">
-        <div>
-          <h3>landscape Karlshorst</h3>
-          <p>2 Panorama-Standorte verfügbar</p>
-        </div>
-        <span class="badge">2 Panoramen</span>
-      </div>
-    </div>
-
-    <!-- Custom Panorama Upload -->
-    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <p>drag or upload your own <strong>Panorama (Format 2:1)</strong> file here</p>
-      <input type="file" id="fileInput" accept="image/*">
-    </div>
+<!-- ── Startseite mit Panorama-Auswahl ──────────────────────────── -->
+<div id="upload-screen">
+  <h1>Panorama View</h1>
+  <p class="subtitle">Wähle ein Panorama oder lade deine eigene Datei hoch</p>
+  <p class="nav-hint">PC: Maus ziehen zum Umschauen / VR: Blicksteuerung & Menü</p>
+  
+  <div class="room-grid" id="room-grid">
+    <!-- Panoramen werden dynamisch generiert -->
   </div>
+  
+  <div class="divider-small"></div>
+  
+  <div id="drop-zone">
+    <p>360° Bild hierhin ziehen oder hochladen</p>
+  </div>
+  <input type="file" id="file-input" accept="image/*" />
+</div>
 
-  <script>
-    function openProject(folder, count) {
-      window.location.href = `viewer.html?project=${folder}&count=${count}`;
+<div id="overlay" class="hidden">
+  <h2 id="overlay-title">Panorama View</h2>
+  <div class="controls-hint" id="desktop-hint">
+    <span class="key">Maus</span><span>Umschauen</span>
+    <span class="key">ESC</span><span>Pause / Menü</span>
+  </div>
+  <div class="controls-hint" id="touch-hint" style="display:none">
+    <span class="key">Wischen</span><span>Umschauen</span>
+  </div>
+  <div class="divider"></div>
+  <div class="settings-grid">
+    <label for="brightness-slider">Helligkeit</label>
+    <input type="range" id="brightness-slider" min="0.5" max="3.0" step="0.1" value="1.0" />
+    <span id="brightness-value">1.0</span>
+
+    <label for="fov-slider">Sichtfeld (FOV)</label>
+    <input type="range" id="fov-slider" min="40" max="100" step="1" value="75" />
+    <span id="fov-value">75°</span>
+
+    <label for="bg-color">Hintergrund</label>
+    <input type="color" id="bg-color" value="#ffffff" style="width:50px;height:28px;border:1px solid #bbbbbb;background:none;cursor:pointer;padding:2px" />
+    <span></span>
+  </div>
+  <div class="divider"></div>
+  <div class="btn-row">
+    <button class="start-btn" id="start-btn">Starten</button>
+    <button class="new-file-btn" id="new-file-btn">Neues Bild</button>
+  </div>
+</div>
+
+<div id="crosshair"></div>
+<canvas id="canvas"></canvas>
+<div id="esc-hint">ESC - Pause</div>
+<button id="pause-btn">&#9776; Pause</button>
+
+<div id="info"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+// ── Beispieldaten Bank ───────────────────────────────────────────
+const PANORAMAS = [
+  { category: 'Panorama', name: 'Beispiel 1', file: 'example_01.jpg', brightness: 1.0, fov: 75 },
+  { category: 'Panorama', name: 'Beispiel 2', file: 'example_02.jpg', brightness: 1.0, fov: 75 }
+];
+
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+// DOM Elements
+const canvas       = document.getElementById('canvas');
+const loaderEl     = document.getElementById('loader');
+const uploadScreen = document.getElementById('upload-screen');
+const overlayEl    = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlay-title');
+const crosshair    = document.getElementById('crosshair');
+const escHint      = document.getElementById('esc-hint');
+const progressBar  = document.getElementById('progress-fill');
+const statusText   = document.getElementById('loader-status');
+const startBtn     = document.getElementById('start-btn');
+const newFileBtn   = document.getElementById('new-file-btn');
+const fileInput    = document.getElementById('file-input');
+const dropZone     = document.getElementById('drop-zone');
+const bSlider      = document.getElementById('brightness-slider');
+const bVal         = document.getElementById('brightness-value');
+const fovSlider    = document.getElementById('fov-slider');
+const fovVal       = document.getElementById('fov-value');
+const bgColor      = document.getElementById('bg-color');
+const pauseBtn     = document.getElementById('pause-btn');
+const infoEl       = document.getElementById('info');
+const roomGrid     = document.getElementById('room-grid');
+
+// ── Renderer ─────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.LinearToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.xr.enabled = true;
+
+// ── VR Button Integration ────────────────────────────────────────
+const vrBtn = VRButton.createButton(renderer);
+document.querySelector('.btn-row').appendChild(vrBtn);
+
+// ── Szene & Kamera ───────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+// Rig für Kamera im VR-Modus
+const vrDolly = new THREE.Object3D();
+scene.add(vrDolly);
+vrDolly.add(camera);
+
+// ── VR MENÜ: Starr, unbeweglich am Bildrand, ohne Kästen/Rand, halbtransparent
+const vrMenuCanvas = document.createElement('canvas');
+vrMenuCanvas.width = 512;
+vrMenuCanvas.height = 256;
+const vrMenuCtx = vrMenuCanvas.getContext('2d');
+const vrMenuTexture = new THREE.CanvasTexture(vrMenuCanvas);
+
+const vrMenuMaterial = new THREE.SpriteMaterial({
+  map: vrMenuTexture,
+  transparent: true,
+  opacity: 0.55, // Halbdurchsichtig
+  depthTest: false,
+  depthWrite: false
+});
+
+const vrMenuSprite = new THREE.Sprite(vrMenuMaterial);
+// Ausrichtung starr am oberen Bildrand fixiert
+vrMenuSprite.scale.set(0.6, 0.3, 1);
+vrMenuSprite.position.set(0, 0.25, -0.8); 
+vrMenuSprite.renderOrder = 999;
+vrMenuSprite.visible = false;
+camera.add(vrMenuSprite); // Starr an Kamera gekoppelt
+
+function updateVRMenu(lines) {
+  if (!renderer.xr.isPresenting) {
+    vrMenuSprite.visible = false;
+    return;
+  }
+  vrMenuSprite.visible = true;
+  vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
+  
+  // NUR schwarzer Text ohne Hintergrundkasten/Rand
+  vrMenuCtx.fillStyle = '#000000';
+  vrMenuCtx.font = '24px Arial, sans-serif';
+  
+  lines.forEach((line, i) => {
+    vrMenuCtx.fillText(line, 20, 40 + i * 36);
+  });
+  
+  vrMenuTexture.needsUpdate = true;
+}
+
+// ── Panorama Kugel Geometry ──────────────────────────────────────
+const sphereGeo = new THREE.SphereGeometry(500, 60, 40);
+sphereGeo.scale(-1, 1, 1); // Innenseite anzeigen
+const sphereMat = new THREE.MeshBasicMaterial();
+const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
+scene.add(sphereMesh);
+
+// ── Drag & Rotation Controls (Desktop/Touch) ─────────────────────
+let isUserInteracting = false;
+let onPointerDownPointerX = 0, onPointerDownPointerY = 0;
+let lon = 0, onPointerDownLon = 0;
+let lat = 0, onPointerDownLat = 0;
+let phi = 0, theta = 0;
+
+function onPointerStart(e) {
+  isUserInteracting = true;
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  onPointerDownPointerX = clientX;
+  onPointerDownPointerY = clientY;
+  onPointerDownLon = lon;
+  onPointerDownLat = lat;
+}
+
+function onPointerMove(e) {
+  if (!isUserInteracting) return;
+  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+  lon = (onPointerDownPointerX - clientX) * 0.1 + onPointerDownLon;
+  lat = (clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
+}
+
+function onPointerEnd() {
+  isUserInteracting = false;
+}
+
+canvas.addEventListener('pointerdown', onPointerStart);
+canvas.addEventListener('pointermove', onPointerMove);
+canvas.addEventListener('pointerup', onPointerEnd);
+
+// ── UI Interaktionen & Regler ────────────────────────────────────
+bSlider.addEventListener('input', () => {
+  const v = parseFloat(bSlider.value);
+  bVal.textContent = v.toFixed(1);
+  renderer.toneMappingExposure = v;
+});
+
+fovSlider.addEventListener('input', () => {
+  const v = parseInt(fovSlider.value);
+  fovVal.textContent = v + '°';
+  camera.fov = v;
+  camera.updateProjectionMatrix();
+});
+
+bgColor.addEventListener('input', () => {
+  scene.background = new THREE.Color(bgColor.value);
+});
+
+function showOverlay() {
+  overlayEl.classList.remove('hidden');
+  crosshair.classList.remove('visible');
+  escHint.classList.remove('visible');
+}
+
+function hideOverlay() {
+  overlayEl.classList.add('hidden');
+  if (!isTouch) {
+    crosshair.classList.add('visible');
+    escHint.classList.add('visible');
+  } else {
+    pauseBtn.style.display = 'block';
+  }
+}
+
+startBtn.addEventListener('click', hideOverlay);
+pauseBtn.addEventListener('click', showOverlay);
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') showOverlay();
+});
+
+newFileBtn.addEventListener('click', () => {
+  overlayEl.classList.add('hidden');
+  uploadScreen.classList.remove('hidden');
+});
+
+// ── Raumliste Aufbauen ───────────────────────────────────────────
+function buildRoomCards() {
+  roomGrid.innerHTML = '';
+  PANORAMAS.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'room-card';
+    card.dataset.index = index;
+    card.innerHTML = `<span class="room-category">${item.category}</span><span class="room-name">${item.name}</span>`;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.room-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      loadPanorama(item.file, item.name);
+    });
+    roomGrid.appendChild(card);
+  });
+}
+buildRoomCards();
+
+// ── Bild Laden ───────────────────────────────────────────────────
+const textureLoader = new THREE.TextureLoader();
+
+function loadPanorama(url, displayName) {
+  uploadScreen.classList.add('hidden');
+  loaderEl.classList.remove('hidden');
+  progressBar.style.width = '30%';
+  statusText.textContent = 'Bild laden ...';
+
+  textureLoader.load(
+    url,
+    (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      sphereMat.map = texture;
+      sphereMat.needsUpdate = true;
+      progressBar.style.width = '100%';
+      overlayTitle.textContent = displayName || 'Panorama';
+      loaderEl.classList.add('hidden');
+      overlayEl.classList.remove('hidden');
+    },
+    (xhr) => {
+      if (xhr.total > 0) {
+        const p = (xhr.loaded / xhr.total) * 100;
+        progressBar.style.width = p.toFixed(0) + '%';
+      }
+    },
+    () => {
+      loaderEl.classList.add('hidden');
+      uploadScreen.classList.remove('hidden');
+    }
+  );
+}
+
+// Upload Handling
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0]; if(f) loadFile(f);
+});
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0]; if(f) loadFile(f); fileInput.value = '';
+});
+
+function loadFile(file) {
+  const url = URL.createObjectURL(file);
+  loadPanorama(url, file.name);
+}
+
+// ── Main Render Loop ─────────────────────────────────────────────
+let animRunning = false;
+
+function animate() {
+  renderer.setAnimationLoop(() => {
+    if (renderer.xr.isPresenting) {
+      // VR Menü mit schwarzem Text rendern
+      updateVRMenu([
+        'PANORAMA VIEW VR',
+        '-------------------',
+        'Blickrichtung drehen',
+        'Trigger: Auswählen'
+      ]);
+    } else {
+      // Kameraposition im normalen Modus berechnen
+      lat = Math.max(-85, Math.min(85, lat));
+      phi = THREE.MathUtils.degToRad(90 - lat);
+      theta = THREE.MathUtils.degToRad(lon);
+
+      camera.position.x = 100 * Math.sin(phi) * Math.cos(theta);
+      camera.position.y = 100 * Math.cos(phi);
+      camera.position.z = 100 * Math.sin(phi) * Math.sin(theta);
+      camera.lookAt(0, 0, 0);
     }
 
-    // --- IndexedDB für große Bilddateien ---
-    function saveImageToDB(file, callback) {
-      const request = indexedDB.open('PanoramaDB', 1);
+    renderer.render(scene, camera);
+  });
+}
 
-      request.onupgradeneeded = function(e) {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images');
-        }
-      };
+animate();
 
-      request.onsuccess = function(e) {
-        const db = e.target.result;
-        const tx = db.transaction('images', 'readwrite');
-        const store = tx.objectStore('images');
-        
-        store.put(file, 'customPano');
-
-        tx.oncomplete = function() {
-          callback();
-        };
-      };
-
-      request.onerror = function() {
-        alert('Fehler beim Speichern der Bilddatei in die Datenbank.');
-      };
-    }
-
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      dropZone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-      }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      dropZone.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-      }, false);
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      if (files.length > 0) handleCustomFile(files[0]);
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) handleCustomFile(e.target.files[0]);
-    });
-
-    function handleCustomFile(file) {
-      saveImageToDB(file, function() {
-        window.location.href = 'viewer.html?custom=1';
-      });
-    }
-  </script>
+// ── Resize ───────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
 </body>
 </html>
