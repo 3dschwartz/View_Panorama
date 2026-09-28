@@ -147,22 +147,22 @@
 
   <div class="container">
     <div class="grid">
-      <!-- Projekt 1 -->
-      <div class="card" onclick="openProject('teufelsberg', 2)">
+      <!-- Projekt 1: Teufelsberg (4 Panoramen) -->
+      <div class="card" onclick="openProject('teufelsberg', 4)">
         <div>
           <h3>landscape Teufelsberg</h3>
-          <p>2 Panorama-Standorte verfügbar</p>
-        </div>
-        <span class="badge">2 Panoramen</span>
-      </div>
-
-      <!-- Projekt 2 -->
-      <div class="card" onclick="openProject('karlshorst', 4)">
-        <div>
-          <h3>landscape Karlshorst</h3>
           <p>4 Panorama-Standorte verfügbar</p>
         </div>
         <span class="badge">4 Panoramen</span>
+      </div>
+
+      <!-- Projekt 2: Karlshorst (2 Panoramen) -->
+      <div class="card" onclick="openProject('karlshorst', 2)">
+        <div>
+          <h3>landscape Karlshorst</h3>
+          <p>2 Panorama-Standorte verfügbar</p>
+        </div>
+        <span class="badge">2 Panoramen</span>
       </div>
     </div>
 
@@ -208,7 +208,11 @@
     function handleCustomFile(file) {
       const reader = new FileReader();
       reader.onload = function(e) {
-        sessionStorage.setItem('customPanorama', e.target.result);
+        try {
+          sessionStorage.setItem('customPanorama', e.target.result);
+        } catch(err) {
+          console.warn('sessionStorage gesperrt oder voll, verwende Fallback');
+        }
         window.location.href = 'viewer.html?custom=1';
       };
       reader.readAsDataURL(file);

@@ -140,7 +140,7 @@
       letter-spacing: 1px;
     }
 
-    /* Das Test-Quadrat für den Standort */
+    /* Das Quadrat für den Standort */
     .radar-square {
       width: 80px;
       height: 80px;
@@ -209,8 +209,6 @@
     renderer="antialias: true; colorManagement: true"
     background="color: #000"
   >
-    <a-assets id="assets"></a-assets>
-
     <a-entity id="pano-container" position="0 1.6 0">
       <a-sky id="sky" radius="500" position="0 0 0" class="clickable"></a-sky>
     </a-entity>
@@ -241,14 +239,35 @@
       const hudOverlay = document.getElementById('hud-overlay');
       const hudMenu = document.getElementById('hudMenu');
 
+      // Helper: Prüft, ob Bild mit .jpg oder .JPG geladen werden kann
+      function setSkySourceWithFallback(basePath) {
+        const img = new Image();
+        const primaryPath = `${basePath}.jpg`;
+        const fallbackPath = `${basePath}.JPG`;
+
+        img.onload = function() {
+          sky.setAttribute('src', primaryPath);
+        };
+        img.onerror = function() {
+          sky.setAttribute('src', fallbackPath);
+        };
+        img.src = primaryPath;
+      }
+
       // 1. Eigenes Panorama (Custom Upload)
       if (isCustom) {
         hudOverlay.style.display = 'none'; // Menü & HUD ausblenden
-        const customData = sessionStorage.getItem('customPanorama');
+        let customData = null;
+        try {
+          customData = sessionStorage.getItem('customPanorama');
+        } catch(e) {
+          console.warn('Speicherzugriff fehlgeschlagen:', e);
+        }
+
         if (customData) {
           sky.setAttribute('src', customData);
         } else {
-          alert('Kein Panorama gefunden!');
+          alert('Kein Bilddaten im Speicher gefunden. Bitte nutzen Sie einen lokalen Webserver (z. B. VS Code Live Server / GitHub Pages).');
           window.location.href = 'index.html';
         }
         return;
@@ -256,17 +275,13 @@
 
       // 2. Projekt-Panoramen (Teufelsberg / Karlshorst)
       if (project && count > 0) {
-        let currentPanoIndex = 1;
-
         function loadProjectPanorama(index) {
-          currentPanoIndex = index;
-          // Generiert Pfad wie: teufelsberg/pano_01.jpg
           const formattedIndex = String(index).padStart(2, '0');
-          const imagePath = `${project}/pano_${formattedIndex}.jpg`;
+          const basePath = `${project}/pano_${formattedIndex}`;
+          
+          setSkySourceWithFallback(basePath);
 
-          sky.setAttribute('src', imagePath);
-
-          // Update Button UI
+          // Update UI Button-Zustand
           document.querySelectorAll('.hud-btn').forEach((btn, idx) => {
             if (idx + 1 === index) {
               btn.classList.add('active');
@@ -276,7 +291,7 @@
           });
         }
 
-        // Generiere HUD-Buttons dynamisch je nach Projekt-Panoramazahl
+        // Generiere HUD-Buttons dynamisch
         for (let i = 1; i <= count; i++) {
           const btn = document.createElement('button');
           btn.className = 'hud-btn';
@@ -285,7 +300,7 @@
           hudMenu.appendChild(btn);
         }
 
-        // Erstes Panorama beim Start laden
+        // Erstes Panorama laden
         loadProjectPanorama(1);
       } else {
         window.location.href = 'index.html';
