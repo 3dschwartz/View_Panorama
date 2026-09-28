@@ -57,7 +57,7 @@
       background: #000;
     }
 
-    /* FUTURISTISCHES OVERHEAD / HELMVISIER HUD OVERLAY */
+    /* HUD OVERLAY LAYOUT */
     #hud-overlay {
       position: absolute;
       top: 0;
@@ -72,7 +72,6 @@
       box-shadow: inset 0 0 100px rgba(0, 240, 255, 0.15);
     }
 
-    /* Links: HUD Menü zur Panoramaauswahl */
     .hud-panel-left {
       pointer-events: auto;
       background: rgba(10, 20, 30, 0.65);
@@ -115,7 +114,6 @@
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
 
-    /* Rechts: HUD Minimap / Quadrat */
     .hud-panel-right {
       background: rgba(10, 20, 30, 0.65);
       backdrop-filter: blur(8px);
@@ -140,7 +138,6 @@
       letter-spacing: 1px;
     }
 
-    /* Das Quadrat für den Standort */
     .radar-square {
       width: 80px;
       height: 80px;
@@ -166,7 +163,6 @@
       100% { transform: scale(1.3); opacity: 1; }
     }
 
-    /* Zurück-Button */
     .hud-back-btn {
       position: absolute;
       bottom: 20px;
@@ -189,7 +185,6 @@
   <div id="hud-overlay">
     <div class="hud-panel-left" id="hudMenu">
       <h4>PANO SELECT</h4>
-      <!-- Dynamische Panorama-Buttons -->
     </div>
 
     <div class="hud-panel-right" id="hudMap">
@@ -254,22 +249,34 @@
         img.src = primaryPath;
       }
 
-      // 1. Eigenes Panorama (Custom Upload)
+      // 1. Eigenes Panorama aus IndexedDB laden
       if (isCustom) {
         hudOverlay.style.display = 'none'; // Menü & HUD ausblenden
-        let customData = null;
-        try {
-          customData = sessionStorage.getItem('customPanorama');
-        } catch(e) {
-          console.warn('Speicherzugriff fehlgeschlagen:', e);
-        }
 
-        if (customData) {
-          sky.setAttribute('src', customData);
-        } else {
-          alert('Kein Bilddaten im Speicher gefunden. Bitte nutzen Sie einen lokalen Webserver (z. B. VS Code Live Server / GitHub Pages).');
+        const request = indexedDB.open('PanoramaDB', 1);
+
+        request.onsuccess = function(e) {
+          const db = e.target.result;
+          const tx = db.transaction('images', 'readonly');
+          const store = tx.objectStore('images');
+          const getReq = store.get('customPano');
+
+          getReq.onsuccess = function() {
+            if (getReq.result) {
+              const objectURL = URL.createObjectURL(getReq.result);
+              sky.setAttribute('src', objectURL);
+            } else {
+              alert('Kein Bild in der Datenbank gefunden.');
+              window.location.href = 'index.html';
+            }
+          };
+        };
+
+        request.onerror = function() {
+          alert('Fehler beim Öffnen der Datenbank.');
           window.location.href = 'index.html';
-        }
+        };
+
         return;
       }
 
@@ -281,7 +288,6 @@
           
           setSkySourceWithFallback(basePath);
 
-          // Update UI Button-Zustand
           document.querySelectorAll('.hud-btn').forEach((btn, idx) => {
             if (idx + 1 === index) {
               btn.classList.add('active');
@@ -291,7 +297,6 @@
           });
         }
 
-        // Generiere HUD-Buttons dynamisch
         for (let i = 1; i <= count; i++) {
           const btn = document.createElement('button');
           btn.className = 'hud-btn';
@@ -300,7 +305,6 @@
           hudMenu.appendChild(btn);
         }
 
-        // Erstes Panorama laden
         loadProjectPanorama(1);
       } else {
         window.location.href = 'index.html';
