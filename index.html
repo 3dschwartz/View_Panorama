@@ -82,10 +82,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   cursor: pointer;
   transition: text-decoration 0.2s;
 }
-.pano-link:hover{
-  text-decoration: underline;
-}
-.pano-link.active{
+.pano-link:hover,.pano-link.active{
   text-decoration: underline;
 }
 .menu-back-btn{
@@ -174,8 +171,16 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   <p class="subtitle">Select a Project</p>
   <p class="nav-hint">PC: Drag Mouse to Look Around / VR: Trigger to Select, Thumbstick to Turn</p>
   
+  <!-- Direkt in HTML gerendert – unabhängig von JavaScript -->
   <div class="room-grid" id="room-grid">
-    <!-- Projects loaded dynamically -->
+    <div class="room-card" data-project-id="karlshorst">
+      <span class="room-category">Project</span>
+      <span class="room-name">Karlshorst</span>
+    </div>
+    <div class="room-card" data-project-id="teufelsberg">
+      <span class="room-category">Project</span>
+      <span class="room-name">Teufelsberg</span>
+    </div>
   </div>
   
   <div class="divider-small"></div>
@@ -577,23 +582,14 @@ function showStartScreen() {
   escHint.classList.remove('visible');
 }
 
-// ── Build Projects Grid (Startseite) ─────────────────────────────
-function buildProjectGrid() {
-  const grid = document.getElementById('room-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-
-  PROJECTS.forEach((proj) => {
-    const card = document.createElement('div');
-    card.className = 'room-card';
-    card.innerHTML = `
-      <span class="room-category">Project</span>
-      <span class="room-name">${proj.name}</span>
-    `;
-    card.addEventListener('click', () => selectProject(proj));
-    grid.appendChild(card);
+// ── Bind Click Events to HTML Cards ──────────────────────────────
+document.querySelectorAll('.room-card').forEach((card) => {
+  card.addEventListener('click', () => {
+    const projId = card.getAttribute('data-project-id');
+    const proj = PROJECTS.find((p) => p.id === projId);
+    if (proj) selectProject(proj);
   });
-}
+});
 
 function selectProject(project) {
   activeProject = project;
@@ -601,13 +597,6 @@ function selectProject(project) {
     const firstPano = project.panoramas[0];
     loadPanorama(firstPano.file, `${project.name} – ${firstPano.name}`);
   }
-}
-
-// Garantierte Ausführung nach DOM-Ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', buildProjectGrid);
-} else {
-  buildProjectGrid();
 }
 
 // ── Left Menu Generation (2D Desktop) ─────────────────────────────
