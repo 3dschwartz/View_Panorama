@@ -36,7 +36,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 #drop-zone p{font-size:13px;letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
 #file-input{display:none}
 
-/* ── Left Transparent Text Menu (Einheitliche Schrift) ───────────────── */
+/* ── Left Transparent Text Menu ───────────────── */
 #pano-menu-left{
   position: fixed;
   top: 30px;
@@ -106,7 +106,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   opacity: 1;
 }
 
-/* ── Settings Overlay (ESC / Pause) ────────────────────────────── */
+/* ── Settings Overlay (ESC / Pause) ─────────────────────────── */
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,0.94);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;z-index:50;backdrop-filter:blur(4px);transition:opacity 0.3s ease;overflow-y:auto;padding:40px 0;touch-action:pan-y}
 #overlay.hidden{opacity:0;pointer-events:none}
 #overlay h2{font-size:13px;font-weight:400;letter-spacing:0.25em;text-transform:uppercase;color:#000000}
@@ -136,7 +136,6 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
 #pause-btn{position:fixed;top:14px;right:16px;z-index:30;display:none;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#888888;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
 
-/* VR Button Integration */
 #VRButton {
   position: static !important;
   background: transparent !important;
@@ -173,7 +172,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <div id="upload-screen">
   <h1>Panorama View</h1>
   <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag Mouse to Look Around / VR: Thumbstick Turn & Menu</p>
+  <p class="nav-hint">PC: Drag Mouse to Look Around / VR: Trigger to Select, Thumbstick to Turn</p>
   
   <div class="room-grid" id="room-grid">
     <!-- Projects loaded dynamically -->
@@ -194,7 +193,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   <button class="menu-back-btn" id="menu-back-to-projects">&larr; Switch Project</button>
 </div>
 
-<!-- ── Settings Overlay (Pause / ESC) ─────────────────────────── -->
+<!-- ── Settings Overlay ───────────────────────────────────────── -->
 <div id="overlay" class="hidden">
   <h2 id="overlay-title">Panorama View</h2>
   <div class="controls-hint" id="desktop-hint">
@@ -239,8 +238,9 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <script type="module">
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { XRControllerModelFactory } from 'three/addons/utils/XRControllerModelFactory.js';
 
-// ── Projects Data (Karlshorst: 2 Panos / Teufelsberg: 4 Panos) ────
+// ── Projects Data ────────────────────────────────────────────────
 const PROJECTS = [
   {
     id: 'karlshorst',
@@ -317,45 +317,152 @@ const vrDolly = new THREE.Object3D();
 scene.add(vrDolly);
 vrDolly.add(camera);
 
-// ── VR HUD Overlay (Lower Positioned) ────────────────────────────
+// ── VR Controllers Setup (Rays & Raycaster) ─────────────────────
+const raycaster = new THREE.Raycaster();
+const tempMatrix = new THREE.Matrix4();
+let vrMenuClickables = [];
+
+const controller1 = renderer.xr.getController(0);
+controller1.addEventListener('select', onVRSelect);
+vrDolly.add(controller1);
+
+const controller2 = renderer.xr.getController(1);
+controller2.addEventListener('select', onVRSelect);
+vrDolly.add(controller2);
+
+// Controller Visual Ray (Laser Pointer)
+const geometry = new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, 0, -5)
+]);
+const material = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+
+const line1 = new THREE.Line(geometry, material);
+const line2 = new THREE.Line(geometry, material);
+controller1.add(line1);
+controller2.add(line2);
+
+// Controller Models
+const controllerModelFactory = new XRControllerModelFactory();
+const controllerGrip1 = renderer.xr.getControllerGrip(0);
+controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+vrDolly.add(controllerGrip1);
+
+const controllerGrip2 = renderer.xr.getControllerGrip(1);
+controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
+vrDolly.add(controllerGrip2);
+
+// ── Interactive VR Menu Plane ────────────────────────────────────
 const vrMenuCanvas = document.createElement('canvas');
 vrMenuCanvas.width = 512;
-vrMenuCanvas.height = 256;
+vrMenuCanvas.height = 512;
 const vrMenuCtx = vrMenuCanvas.getContext('2d');
 const vrMenuTexture = new THREE.CanvasTexture(vrMenuCanvas);
 
-const vrMenuMaterial = new THREE.SpriteMaterial({
+const vrMenuGeo = new THREE.PlaneGeometry(0.5, 0.5);
+const vrMenuMat = new THREE.MeshBasicMaterial({
   map: vrMenuTexture,
   transparent: true,
-  opacity: 0.55,
-  depthTest: false,
-  depthWrite: false
+  opacity: 0.75,
+  side: THREE.DoubleSide
 });
+const vrMenuMesh = new THREE.Mesh(vrMenuGeo, vrMenuMat);
 
-const vrMenuSprite = new THREE.Sprite(vrMenuMaterial);
-vrMenuSprite.scale.set(0.6, 0.3, 1);
-// Menu position moved down in VR view
-vrMenuSprite.position.set(0, -0.15, -0.85); 
-vrMenuSprite.renderOrder = 999;
-vrMenuSprite.visible = false;
-camera.add(vrMenuSprite);
+// Position Menu: Shifted to the Left (-0.35) and lower (-0.1)
+vrMenuMesh.position.set(-0.35, -0.1, -0.85);
+vrMenuMesh.rotation.y = Math.PI / 12; // Slightly angled towards the user
+vrMenuMesh.renderOrder = 999;
+camera.add(vrMenuMesh);
 
-function updateVRMenu(lines) {
+let vrItemBounds = [];
+
+function updateVRMenu() {
   if (!renderer.xr.isPresenting) {
-    vrMenuSprite.visible = false;
+    vrMenuMesh.visible = false;
     return;
   }
-  vrMenuSprite.visible = true;
+  vrMenuMesh.visible = true;
+  
   vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
+  vrItemBounds = [];
+
+  if (!activeProject) {
+    vrMenuTexture.needsUpdate = true;
+    return;
+  }
+
   vrMenuCtx.fillStyle = '#000000';
-  vrMenuCtx.font = '22px Arial, sans-serif';
-  lines.forEach((line, i) => {
-    vrMenuCtx.fillText(line.toUpperCase(), 20, 36 + i * 34);
+  vrMenuCtx.font = '24px Arial, sans-serif';
+
+  // Title
+  let currentY = 40;
+  vrMenuCtx.fillText(activeProject.name.toUpperCase(), 20, currentY);
+
+  currentY += 40;
+
+  // Panorama Links
+  activeProject.panoramas.forEach((p) => {
+    const isCurrent = p.file === activePanoFile;
+    vrMenuCtx.font = isCurrent ? 'bold 22px Arial, sans-serif' : '22px Arial, sans-serif';
+    
+    const text = isCurrent ? '> ' + p.name.toUpperCase() : '  ' + p.name.toUpperCase();
+    vrMenuCtx.fillText(text, 20, currentY);
+
+    vrItemBounds.push({
+      type: 'pano',
+      file: p.file,
+      name: p.name,
+      minY: currentY - 24,
+      maxY: currentY + 8
+    });
+
+    currentY += 36;
   });
+
+  // Switch Project Button
+  currentY += 20;
+  vrMenuCtx.font = '18px Arial, sans-serif';
+  vrMenuCtx.fillText('← SWITCH PROJECT', 20, currentY);
+  vrItemBounds.push({
+    type: 'back',
+    minY: currentY - 20,
+    maxY: currentY + 10
+  });
+
   vrMenuTexture.needsUpdate = true;
 }
 
-// ── VR Controller Thumbstick Snap/Smooth Rotation ─────────────────
+// ── VR Trigger Click Handling ─────────────────────────────────────
+function onVRSelect(event) {
+  if (!renderer.xr.isPresenting || !vrMenuMesh.visible) return;
+
+  const controller = event.target;
+  tempMatrix.identity().extractRotation(controller.matrixWorld);
+
+  raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+  raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+
+  const intersects = raycaster.intersectObject(vrMenuMesh);
+
+  if (intersects.length > 0) {
+    const uv = intersects[0].uv;
+    // Map UV (0..1) to Canvas coordinates
+    const canvasY = (1 - uv.y) * vrMenuCanvas.height;
+
+    for (const item of vrItemBounds) {
+      if (canvasY >= item.minY && canvasY <= item.maxY) {
+        if (item.type === 'pano') {
+          loadPanorama(item.file, `${activeProject.name} – ${item.name}`);
+        } else if (item.type === 'back') {
+          showStartScreen();
+        }
+        break;
+      }
+    }
+  }
+}
+
+// ── VR Controller Thumbstick Snap Rotation ────────────────────────
 let canRotateXR = true;
 
 function handleXRInput() {
@@ -366,7 +473,6 @@ function handleXRInput() {
   for (const source of session.inputSources) {
     if (source.gamepad) {
       const axes = source.gamepad.axes;
-      // Axis 2 or 0 is usually the horizontal thumbstick
       const thumbstickX = axes[2] !== undefined ? axes[2] : axes[0];
       
       if (Math.abs(thumbstickX) > 0.5) {
@@ -389,7 +495,7 @@ const sphereMat = new THREE.MeshBasicMaterial();
 const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(sphereMesh);
 
-// ── Drag & Rotation Controls (Desktop/Touch) ─────────────────────
+// ── Drag & Rotation Controls (Desktop) ───────────────────────────
 let isUserInteracting = false;
 let onPointerDownPointerX = 0, onPointerDownPointerY = 0;
 let lon = 0, onPointerDownLon = 0;
@@ -480,7 +586,7 @@ function showStartScreen() {
   escHint.classList.remove('visible');
 }
 
-// ── Build Projects Selection Grid ─────────────────────────────────
+// ── Build Projects Grid ──────────────────────────────────────────
 function buildProjectGrid() {
   roomGrid.innerHTML = '';
   PROJECTS.forEach((proj) => {
@@ -504,7 +610,7 @@ function selectProject(project) {
   }
 }
 
-// ── Left Menu Generation ─────────────────────────────────────────
+// ── Left Menu Generation (2D Desktop) ─────────────────────────────
 function updateLeftMenu() {
   if (!activeProject) {
     panoMenuLeft.classList.add('hidden');
@@ -550,6 +656,7 @@ function loadPanorama(url, displayName) {
       loaderEl.classList.add('hidden');
       
       updateLeftMenu();
+      updateVRMenu();
 
       if (!isTouch) {
         crosshair.classList.add('visible');
@@ -594,21 +701,7 @@ function animate() {
   renderer.setAnimationLoop(() => {
     if (renderer.xr.isPresenting) {
       handleXRInput();
-      
-      const lines = [
-        activeProject ? activeProject.name : 'PANORAMA VIEW',
-        '-------------------',
-        'Stick: Rotate View'
-      ];
-      
-      if (activeProject) {
-        activeProject.panoramas.forEach(p => {
-          const prefix = (p.file === activePanoFile) ? '> ' : '  ';
-          lines.push(prefix + p.name);
-        });
-      }
-
-      updateVRMenu(lines);
+      updateVRMenu();
     } else {
       lat = Math.max(-85, Math.min(85, lat));
       phi = THREE.MathUtils.degToRad(90 - lat);
