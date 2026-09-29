@@ -285,7 +285,6 @@ const fovSlider         = document.getElementById('fov-slider');
 const fovVal            = document.getElementById('fov-value');
 const bgColor           = document.getElementById('bg-color');
 const pauseBtn          = document.getElementById('pause-btn');
-const roomGrid          = document.getElementById('room-grid');
 
 const panoMenuLeft      = document.getElementById('pano-menu-left');
 const menuProjectTitle  = document.getElementById('menu-project-title');
@@ -330,16 +329,14 @@ controller2.addEventListener('select', onVRSelect);
 vrDolly.add(controller2);
 
 // Controller Rays (Laser Pointer)
-const geometry = new THREE.BufferGeometry().setFromPoints([
+const rayGeo = new THREE.BufferGeometry().setFromPoints([
   new THREE.Vector3(0, 0, 0),
   new THREE.Vector3(0, 0, -5)
 ]);
-const material = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
+const rayMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
 
-const line1 = new THREE.Line(geometry, material);
-const line2 = new THREE.Line(geometry, material);
-controller1.add(line1);
-controller2.add(line2);
+controller1.add(new THREE.Line(rayGeo, rayMat));
+controller2.add(new THREE.Line(rayGeo, rayMat));
 
 // Controller Models
 const controllerModelFactory = new XRControllerModelFactory();
@@ -582,7 +579,10 @@ function showStartScreen() {
 
 // ── Build Projects Grid (Startseite) ─────────────────────────────
 function buildProjectGrid() {
-  roomGrid.innerHTML = '';
+  const grid = document.getElementById('room-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
   PROJECTS.forEach((proj) => {
     const card = document.createElement('div');
     card.className = 'room-card';
@@ -591,7 +591,7 @@ function buildProjectGrid() {
       <span class="room-name">${proj.name}</span>
     `;
     card.addEventListener('click', () => selectProject(proj));
-    roomGrid.appendChild(card);
+    grid.appendChild(card);
   });
 }
 
@@ -603,8 +603,12 @@ function selectProject(project) {
   }
 }
 
-// Initiales Laden der Startseiten-Karten
-buildProjectGrid();
+// Garantierte Ausführung nach DOM-Ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', buildProjectGrid);
+} else {
+  buildProjectGrid();
+}
 
 // ── Left Menu Generation (2D Desktop) ─────────────────────────────
 function updateLeftMenu() {
