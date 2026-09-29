@@ -317,10 +317,9 @@ const vrDolly = new THREE.Object3D();
 scene.add(vrDolly);
 vrDolly.add(camera);
 
-// ── VR Controllers Setup (Rays & Raycaster) ─────────────────────
+// ── VR Controllers Setup ─────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 const tempMatrix = new THREE.Matrix4();
-let vrMenuClickables = [];
 
 const controller1 = renderer.xr.getController(0);
 controller1.addEventListener('select', onVRSelect);
@@ -330,7 +329,7 @@ const controller2 = renderer.xr.getController(1);
 controller2.addEventListener('select', onVRSelect);
 vrDolly.add(controller2);
 
-// Controller Visual Ray (Laser Pointer)
+// Controller Rays (Laser Pointer)
 const geometry = new THREE.BufferGeometry().setFromPoints([
   new THREE.Vector3(0, 0, 0),
   new THREE.Vector3(0, 0, -5)
@@ -368,9 +367,8 @@ const vrMenuMat = new THREE.MeshBasicMaterial({
 });
 const vrMenuMesh = new THREE.Mesh(vrMenuGeo, vrMenuMat);
 
-// Position Menu: Shifted to the Left (-0.35) and lower (-0.1)
 vrMenuMesh.position.set(-0.35, -0.1, -0.85);
-vrMenuMesh.rotation.y = Math.PI / 12; // Slightly angled towards the user
+vrMenuMesh.rotation.y = Math.PI / 12;
 vrMenuMesh.renderOrder = 999;
 camera.add(vrMenuMesh);
 
@@ -394,13 +392,11 @@ function updateVRMenu() {
   vrMenuCtx.fillStyle = '#000000';
   vrMenuCtx.font = '24px Arial, sans-serif';
 
-  // Title
   let currentY = 40;
   vrMenuCtx.fillText(activeProject.name.toUpperCase(), 20, currentY);
 
   currentY += 40;
 
-  // Panorama Links
   activeProject.panoramas.forEach((p) => {
     const isCurrent = p.file === activePanoFile;
     vrMenuCtx.font = isCurrent ? 'bold 22px Arial, sans-serif' : '22px Arial, sans-serif';
@@ -419,7 +415,6 @@ function updateVRMenu() {
     currentY += 36;
   });
 
-  // Switch Project Button
   currentY += 20;
   vrMenuCtx.font = '18px Arial, sans-serif';
   vrMenuCtx.fillText('← SWITCH PROJECT', 20, currentY);
@@ -432,7 +427,7 @@ function updateVRMenu() {
   vrMenuTexture.needsUpdate = true;
 }
 
-// ── VR Trigger Click Handling ─────────────────────────────────────
+// ── VR Selection ──────────────────────────────────────────────────
 function onVRSelect(event) {
   if (!renderer.xr.isPresenting || !vrMenuMesh.visible) return;
 
@@ -446,7 +441,6 @@ function onVRSelect(event) {
 
   if (intersects.length > 0) {
     const uv = intersects[0].uv;
-    // Map UV (0..1) to Canvas coordinates
     const canvasY = (1 - uv.y) * vrMenuCanvas.height;
 
     for (const item of vrItemBounds) {
@@ -462,7 +456,7 @@ function onVRSelect(event) {
   }
 }
 
-// ── VR Controller Thumbstick Snap Rotation ────────────────────────
+// ── VR Stick Rotation ────────────────────────────────────────────
 let canRotateXR = true;
 
 function handleXRInput() {
@@ -586,7 +580,7 @@ function showStartScreen() {
   escHint.classList.remove('visible');
 }
 
-// ── Build Projects Grid ──────────────────────────────────────────
+// ── Build Projects Grid (Startseite) ─────────────────────────────
 function buildProjectGrid() {
   roomGrid.innerHTML = '';
   PROJECTS.forEach((proj) => {
@@ -600,7 +594,6 @@ function buildProjectGrid() {
     roomGrid.appendChild(card);
   });
 }
-buildProjectGrid();
 
 function selectProject(project) {
   activeProject = project;
@@ -609,6 +602,9 @@ function selectProject(project) {
     loadPanorama(firstPano.file, `${project.name} – ${firstPano.name}`);
   }
 }
+
+// Initiales Laden der Startseiten-Karten
+buildProjectGrid();
 
 // ── Left Menu Generation (2D Desktop) ─────────────────────────────
 function updateLeftMenu() {
