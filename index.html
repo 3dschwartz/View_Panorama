@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="de">
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -6,19 +7,27 @@
 <title>Panorama View</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;font-size:14px;overflow:hidden;height:100dvh;touch-action:none}
 body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;font-size:13px;overflow:hidden;height:100dvh;touch-action:none}
 
 #loader{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;transition:opacity 0.6s ease}
 #loader.hidden{opacity:0;pointer-events:none}
+#loader h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
 #loader h1{font-size:13px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
 .progress-bar{width:min(320px,80vw);height:2px;background:#e0e0e0}
 .progress-fill{height:100%;background:#000000;width:0%;transition:width 0.3s ease}
+#loader-status{letter-spacing:0.15em;color:#666666;text-align:center;padding:0 20px}
+#loader-back-btn{display:none;margin-top:10px;padding:8px 20px;background:transparent;border:1px solid #000000;color:#000000;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer}
 #loader-status{font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:#666666;text-align:center;padding:0 20px}
 #loader-back-btn{display:none;margin-top:10px;padding:8px 20px;background:transparent;border:1px solid #000000;color:#000000;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer}
 
+/* ── Startseite ──────────────────────────── */
 /* ── Start Screen ──────────────────────────── */
 #upload-screen{position:fixed;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:28px;z-index:90;overflow-y:auto;padding:40px 20px;touch-action:pan-y}
 #upload-screen.hidden{display:none}
+#upload-screen h1{font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
+#upload-screen .subtitle{letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-18px}
+#upload-screen .nav-hint{letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-14px}
 #upload-screen h1{font-size:13px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
 #upload-screen .subtitle{font-size:13px;letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-18px}
 #upload-screen .nav-hint{font-size:13px;letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-14px;text-transform:uppercase}
@@ -26,6 +35,8 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 .room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;width:min(600px,92vw)}
 .room-card{padding:22px 16px;background:transparent;border:1px solid #cccccc;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
 .room-card:hover,.room-card:active{border-color:#000000;background:rgba(0,0,0,0.04)}
+.room-card .room-category{letter-spacing:0.15em;color:#888888;text-transform:uppercase;font-size:11px}
+.room-card .room-name{letter-spacing:0.1em;color:#000000;font-weight:bold;font-size:16px}
 .room-card .room-category{font-size:13px;letter-spacing:0.15em;color:#888888;text-transform:uppercase}
 .room-card .room-name{font-size:13px;letter-spacing:0.15em;color:#000000;text-transform:uppercase;font-weight:normal}
 
@@ -33,33 +44,41 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
 #drop-zone{width:min(420px,85vw);height:60px;border:1px solid #cccccc;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
 #drop-zone:hover,#drop-zone.dragover{border-color:#000000;background:rgba(0,0,0,0.04)}
+#drop-zone p{letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
 #drop-zone p{font-size:13px;letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
 #file-input{display:none}
 
-/* ── Left Transparent Text Menu ───────────────── */
+/* ── Transparente Menüleiste links (Ohne Rahmung/Kästen) ───────────────── */
+/* ── Left Transparent Text Menu (Einheitliche Schrift) ───────────────── */
 #pano-menu-left{
-  position: fixed;
-  top: 30px;
-  left: 30px;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
+position: fixed;
+top: 30px;
+left: 30px;
+z-index: 40;
+display: flex;
+flex-direction: column;
+  gap: 12px;
   gap: 10px;
-  pointer-events: auto;
+pointer-events: auto;
+  opacity: 0.55; /* Halbtransparent */
   opacity: 0.55;
-  transition: opacity 0.2s ease;
+transition: opacity 0.2s ease;
 }
 #pano-menu-left:hover{
+  opacity: 0.9;
   opacity: 0.95;
 }
 #pano-menu-left.hidden{
-  display: none;
+display: none;
 }
 .menu-title{
-  font-size: 13px;
+font-size: 13px;
+  letter-spacing: 0.2em;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #000000;
+text-transform: uppercase;
+color: #000000;
+  font-weight: bold;
+  margin-bottom: 6px;
   font-weight: normal;
   margin-bottom: 4px;
 }
@@ -69,396 +88,234 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   gap: 8px;
 }
 .pano-link{
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: #000000;
-  font-family: inherit;
-  font-size: 13px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  text-align: left;
-  cursor: pointer;
+background: none;
+@@ -75,14 +80,12 @@
+text-transform: uppercase;
+text-align: left;
+cursor: pointer;
+  transition: color 0.2s;
   transition: text-decoration 0.2s;
 }
-.pano-link:hover,.pano-link.active{
-  text-decoration: underline;
+.pano-link:hover{
+  color: #000000;
+text-decoration: underline;
+}
+.pano-link.active{
+  font-weight: bold;
+text-decoration: underline;
 }
 .menu-back-btn{
-  margin-top: 14px;
-  background: none;
-  border: none;
-  padding: 0;
-  color: #000000;
-  font-family: inherit;
+@@ -92,7 +95,7 @@
+padding: 0;
+color: #000000;
+font-family: inherit;
+  font-size: 11px;
   font-size: 13px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  text-align: left;
-  cursor: pointer;
-  opacity: 0.7;
-}
-.menu-back-btn:hover{
-  opacity: 1;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+text-align: left;
+@@ -103,21 +106,21 @@
+opacity: 1;
 }
 
-/* ── Settings Overlay (ESC / Pause) ─────────────────────────── */
+/* ── Einstellungsoverlay (Pause/ESC) ────────────────────────────── */
+/* ── Settings Overlay (ESC / Pause) ────────────────────────────── */
 #overlay{position:fixed;inset:0;background:rgba(255,255,255,0.94);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;z-index:50;backdrop-filter:blur(4px);transition:opacity 0.3s ease;overflow-y:auto;padding:40px 0;touch-action:pan-y}
 #overlay.hidden{opacity:0;pointer-events:none}
+#overlay h2{font-weight:400;letter-spacing:0.25em;text-transform:uppercase;color:#000000}
+.controls-hint{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;letter-spacing:0.08em;color:#888888;line-height:1.7}
 #overlay h2{font-size:13px;font-weight:400;letter-spacing:0.25em;text-transform:uppercase;color:#000000}
 .controls-hint{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13px;letter-spacing:0.08em;color:#888888;line-height:1.7;text-transform:uppercase}
 .controls-hint .key{color:#000000;text-align:right}
+.settings-grid{display:grid;grid-template-columns:auto minmax(90px,140px) auto;column-gap:10px;row-gap:10px;align-items:center;width:min(320px,88vw)}
 .settings-grid{display:grid;grid-template-columns:auto minmax(90px,140px) auto;column-gap:10px;row-gap:10px;align-items:center;width:min(320px,88vw);font-size:13px}
 .settings-grid label{letter-spacing:0.1em;color:#888888;text-transform:uppercase;text-align:left;white-space:nowrap}
 .settings-grid input[type=range]{width:100%;accent-color:#000000;cursor:pointer}
+.settings-grid span{color:#000000;text-align:left;font-size:inherit;white-space:nowrap}
 .settings-grid span{color:#000000;text-align:left;font-size:13px;white-space:nowrap}
 .divider{width:min(320px,88vw);height:1px;background:#dddddd;margin:2px 0}
 .btn-row{display:flex;gap:12px;margin-top:4px}
+.start-btn{padding:10px 32px;background:transparent;border:1px solid #000000;color:#000000;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,color 0.2s}
 .start-btn{padding:10px 32px;background:transparent;border:1px solid #000000;color:#000000;font-size:13px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,color 0.2s}
 .start-btn:hover,.start-btn:active{background:#000000;color:#ffffff}
+.new-file-btn{padding:10px 20px;background:transparent;border:1px solid #cccccc;color:#555555;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:border-color 0.2s,color 0.2s}
 .new-file-btn{padding:10px 20px;background:transparent;border:1px solid #cccccc;color:#555555;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:border-color 0.2s,color 0.2s}
 .new-file-btn:hover,.new-file-btn:active{border-color:#888888;color:#888888}
 
 #crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
-#crosshair.visible{opacity:0.6}
-#crosshair::before,#crosshair::after{content:'';position:absolute;background:#000000}
-#crosshair::before{width:1px;height:100%;left:50%;top:0}
-#crosshair::after{width:100%;height:1px;top:50%;left:0}
+@@ -128,17 +131,18 @@
 
 #canvas{display:block;position:fixed;inset:0}
 
+#esc-hint{position:fixed;top:14px;right:16px;letter-spacing:0.15em;color:#555555;text-transform:uppercase;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
 #esc-hint{position:fixed;top:14px;right:16px;font-size:13px;letter-spacing:0.15em;color:#555555;text-transform:uppercase;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
 #esc-hint.visible{opacity:1}
 
+#pause-btn{position:fixed;top:14px;right:16px;z-index:30;display:none;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#888888;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
 #pause-btn{position:fixed;top:14px;right:16px;z-index:30;display:none;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#888888;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
 
+/* VR-Button Integration */
+/* VR Button Integration */
 #VRButton {
-  position: static !important;
-  background: transparent !important;
-  border: 1px solid #000000 !important;
-  color: #000000 !important;
+position: static !important;
+background: transparent !important;
+border: 1px solid #000000 !important;
+color: #000000 !important;
   font-size: 13px !important;
-  letter-spacing: 0.25em !important;
-  text-transform: uppercase !important;
-  padding: 10px 32px !important;
-  cursor: pointer !important;
-  opacity: 1 !important;
-  transition: background 0.2s, color 0.2s;
-}
-#VRButton:hover {
-  background: #000000 !important;
-  color: #ffffff !important;
-}
-#VRButton:disabled {
-  opacity: 0.4 !important;
-  cursor: default !important;
-}
-</style>
-</head>
-<body>
-
+letter-spacing: 0.25em !important;
+text-transform: uppercase !important;
+padding: 10px 32px !important;
+@@ -161,60 +165,60 @@
 <div id="loader" class="hidden">
-  <h1>Panorama View</h1>
-  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+<h1>Panorama View</h1>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <span id="loader-status">Panorama wird geladen ...</span>
+  <button id="loader-back-btn">Zurück zur Auswahl</button>
   <span id="loader-status">Loading Panorama...</span>
   <button id="loader-back-btn">Back to Selection</button>
 </div>
 
+<!-- ── Startseite mit Projektauswahl ──────────────────────────── -->
 <!-- ── Start Screen (Project Selection) ──────────────────────────── -->
 <div id="upload-screen">
-  <h1>Panorama View</h1>
+<h1>Panorama View</h1>
+  <p class="subtitle">Wähle ein Projekt aus</p>
+  <p class="nav-hint">PC: Maus ziehen zum Umschauen / VR: Blicksteuerung & Menü</p>
   <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag Mouse to Look Around / VR: Trigger to Select, Thumbstick to Turn</p>
-  
-  <!-- Direkt in HTML gerendert – unabhängig von JavaScript -->
-  <div class="room-grid" id="room-grid">
-    <div class="room-card" data-project-id="karlshorst">
-      <span class="room-category">Project</span>
-      <span class="room-name">Karlshorst</span>
-    </div>
-    <div class="room-card" data-project-id="teufelsberg">
-      <span class="room-category">Project</span>
-      <span class="room-name">Teufelsberg</span>
-    </div>
-  </div>
-  
-  <div class="divider-small"></div>
-  
-  <div id="drop-zone">
+  <p class="nav-hint">PC: Drag Mouse to Look Around / VR: Thumbstick Turn & Menu</p>
+
+<div class="room-grid" id="room-grid">
+    <!-- Projekte werden dynamisch geladen -->
+    <!-- Projects loaded dynamically -->
+</div>
+
+<div class="divider-small"></div>
+
+<div id="drop-zone">
+    <p>360° Bild hierhin ziehen oder hochladen</p>
     <p>Drop 360° image here or click to upload</p>
-  </div>
-  <input type="file" id="file-input" accept="image/*" />
+</div>
+<input type="file" id="file-input" accept="image/*" />
 </div>
 
 <!-- ── Left Side Floating Text Menu ───────────────────────────── -->
 <div id="pano-menu-left" class="hidden">
+  <div class="menu-title" id="menu-project-title">Projekt</div>
   <div class="menu-title" id="menu-project-title">Project</div>
-  <div id="pano-links-container"></div>
+<div id="pano-links-container"></div>
+  <button class="menu-back-btn" id="menu-back-to-projects">&larr; Projekt wechseln</button>
   <button class="menu-back-btn" id="menu-back-to-projects">&larr; Switch Project</button>
 </div>
 
-<!-- ── Settings Overlay ───────────────────────────────────────── -->
+<!-- ── Einstellungen (Pause-Menü) ─────────────────────────────── -->
+<!-- ── Settings Overlay (Pause / ESC) ─────────────────────────── -->
 <div id="overlay" class="hidden">
-  <h2 id="overlay-title">Panorama View</h2>
-  <div class="controls-hint" id="desktop-hint">
+<h2 id="overlay-title">Panorama View</h2>
+<div class="controls-hint" id="desktop-hint">
+    <span class="key">Maus</span><span>Umschauen</span>
+    <span class="key">ESC</span><span>Pause / Einstellungen</span>
     <span class="key">Mouse</span><span>Look Around</span>
     <span class="key">ESC</span><span>Pause / Settings</span>
-  </div>
-  <div class="divider"></div>
-  <div class="settings-grid">
+</div>
+<div class="divider"></div>
+<div class="settings-grid">
+    <label for="brightness-slider">Helligkeit</label>
     <label for="brightness-slider">Brightness</label>
-    <input type="range" id="brightness-slider" min="0.5" max="3.0" step="0.1" value="1.0" />
-    <span id="brightness-value">1.0</span>
+<input type="range" id="brightness-slider" min="0.5" max="3.0" step="0.1" value="1.0" />
+<span id="brightness-value">1.0</span>
 
+    <label for="fov-slider">Sichtfeld (FOV)</label>
     <label for="fov-slider">Field of View (FOV)</label>
-    <input type="range" id="fov-slider" min="40" max="100" step="1" value="75" />
-    <span id="fov-value">75°</span>
+<input type="range" id="fov-slider" min="40" max="100" step="1" value="75" />
+<span id="fov-value">75°</span>
 
+    <label for="bg-color">Hintergrund</label>
     <label for="bg-color">Background</label>
-    <input type="color" id="bg-color" value="#ffffff" style="width:50px;height:28px;border:1px solid #bbbbbb;background:none;cursor:pointer;padding:2px" />
-    <span></span>
-  </div>
-  <div class="divider"></div>
-  <div class="btn-row">
+<input type="color" id="bg-color" value="#ffffff" style="width:50px;height:28px;border:1px solid #bbbbbb;background:none;cursor:pointer;padding:2px" />
+<span></span>
+</div>
+<div class="divider"></div>
+<div class="btn-row">
+    <button class="start-btn" id="start-btn">Weiter</button>
+    <button class="new-file-btn" id="new-file-btn">Projekt-Menü</button>
     <button class="start-btn" id="start-btn">Resume</button>
     <button class="new-file-btn" id="new-file-btn">Project Menu</button>
-  </div>
+</div>
 </div>
 
-<div id="crosshair"></div>
-<canvas id="canvas"></canvas>
-<div id="esc-hint">ESC - Pause</div>
-<button id="pause-btn">&#9776; Pause</button>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.1/examples/jsm/"
-  }
-}
-</script>
-
-<script type="module">
+@@ -236,24 +240,24 @@ <h2 id="overlay-title">Panorama View</h2>
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
-import { XRControllerModelFactory } from 'three/addons/utils/XRControllerModelFactory.js';
 
-// ── Projects Data ────────────────────────────────────────────────
+// ── Projektstruktur mit durchgehend klein geschriebenen Pfaden ───
+// ── Projects Data (Karlshorst: 2 Panos / Teufelsberg: 4 Panos) ────
 const PROJECTS = [
-  {
-    id: 'karlshorst',
-    name: 'Karlshorst',
-    panoramas: [
-      { id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg' },
+{
+id: 'karlshorst',
+name: 'Karlshorst',
+panoramas: [
+{ id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg' },
+      { id: 'pano_02', name: 'Pano 02', file: 'karlshorst/pano_02.jpg' },
+      { id: 'pano_03', name: 'Pano 03', file: 'karlshorst/pano_03.jpg' },
+      { id: 'pano_04', name: 'Pano 04', file: 'karlshorst/pano_04.jpg' }
       { id: 'pano_02', name: 'Pano 02', file: 'karlshorst/pano_02.jpg' }
-    ]
-  },
-  {
-    id: 'teufelsberg',
-    name: 'Teufelsberg',
-    panoramas: [
-      { id: 'pano_01', name: 'Pano 01', file: 'teufelsberg/pano_01.jpg' },
+]
+},
+{
+id: 'teufelsberg',
+name: 'Teufelsberg',
+panoramas: [
+{ id: 'pano_01', name: 'Pano 01', file: 'teufelsberg/pano_01.jpg' },
+      { id: 'pano_02', name: 'Pano 02', file: 'teufelsberg/pano_02.jpg' }
       { id: 'pano_02', name: 'Pano 02', file: 'teufelsberg/pano_02.jpg' },
       { id: 'pano_03', name: 'Pano 03', file: 'teufelsberg/pano_03.jpg' },
       { id: 'pano_04', name: 'Pano 04', file: 'teufelsberg/pano_04.jpg' }
-    ]
-  }
+]
+}
 ];
-
-const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-// DOM Elements
-const canvas            = document.getElementById('canvas');
-const loaderEl          = document.getElementById('loader');
-const loaderBackBtn     = document.getElementById('loader-back-btn');
-const uploadScreen      = document.getElementById('upload-screen');
-const overlayEl         = document.getElementById('overlay');
-const overlayTitle      = document.getElementById('overlay-title');
-const crosshair         = document.getElementById('crosshair');
-const escHint           = document.getElementById('esc-hint');
-const progressBar       = document.getElementById('progress-fill');
-const statusText        = document.getElementById('loader-status');
-const startBtn          = document.getElementById('start-btn');
-const newFileBtn        = document.getElementById('new-file-btn');
-const fileInput         = document.getElementById('file-input');
-const dropZone          = document.getElementById('drop-zone');
-const bSlider           = document.getElementById('brightness-slider');
-const bVal              = document.getElementById('brightness-value');
-const fovSlider         = document.getElementById('fov-slider');
-const fovVal            = document.getElementById('fov-value');
-const bgColor           = document.getElementById('bg-color');
-const pauseBtn          = document.getElementById('pause-btn');
-
-const panoMenuLeft      = document.getElementById('pano-menu-left');
-const menuProjectTitle  = document.getElementById('menu-project-title');
-const panoLinksContainer = document.getElementById('pano-links-container');
-const menuBackToProjBtn = document.getElementById('menu-back-to-projects');
-
-let activeProject = null;
-let activePanoFile = '';
-
-// ── Renderer ─────────────────────────────────────────────────────
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.toneMapping = THREE.LinearToneMapping;
-renderer.toneMappingExposure = 1.0;
-renderer.xr.enabled = true;
-
-// ── VR Button Integration ────────────────────────────────────────
+@@ -303,7 +307,7 @@ <h2 id="overlay-title">Panorama View</h2>
 const vrBtn = VRButton.createButton(renderer);
 document.querySelector('.btn-row').appendChild(vrBtn);
 
+// ── Szene & Kamera ───────────────────────────────────────────────
 // ── Scene & Camera ───────────────────────────────────────────────
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-const vrDolly = new THREE.Object3D();
+@@ -313,7 +317,7 @@ <h2 id="overlay-title">Panorama View</h2>
 scene.add(vrDolly);
 vrDolly.add(camera);
 
-// ── VR Controllers Setup ─────────────────────────────────────────
-const raycaster = new THREE.Raycaster();
-const tempMatrix = new THREE.Matrix4();
-
-const controller1 = renderer.xr.getController(0);
-controller1.addEventListener('select', onVRSelect);
-vrDolly.add(controller1);
-
-const controller2 = renderer.xr.getController(1);
-controller2.addEventListener('select', onVRSelect);
-vrDolly.add(controller2);
-
-// Controller Rays (Laser Pointer)
-const rayGeo = new THREE.BufferGeometry().setFromPoints([
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(0, 0, -5)
-]);
-const rayMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
-
-controller1.add(new THREE.Line(rayGeo, rayMat));
-controller2.add(new THREE.Line(rayGeo, rayMat));
-
-// Controller Models
-const controllerModelFactory = new XRControllerModelFactory();
-const controllerGrip1 = renderer.xr.getControllerGrip(0);
-controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-vrDolly.add(controllerGrip1);
-
-const controllerGrip2 = renderer.xr.getControllerGrip(1);
-controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-vrDolly.add(controllerGrip2);
-
-// ── Interactive VR Menu Plane ────────────────────────────────────
+// ── VR MENÜ Overlay ──────────────────────────────────────────────
+// ── VR HUD Overlay (Lower Positioned) ────────────────────────────
 const vrMenuCanvas = document.createElement('canvas');
 vrMenuCanvas.width = 512;
-vrMenuCanvas.height = 512;
-const vrMenuCtx = vrMenuCanvas.getContext('2d');
-const vrMenuTexture = new THREE.CanvasTexture(vrMenuCanvas);
+vrMenuCanvas.height = 256;
+@@ -330,7 +334,8 @@ <h2 id="overlay-title">Panorama View</h2>
 
-const vrMenuGeo = new THREE.PlaneGeometry(0.5, 0.5);
-const vrMenuMat = new THREE.MeshBasicMaterial({
-  map: vrMenuTexture,
-  transparent: true,
-  opacity: 0.75,
-  side: THREE.DoubleSide
-});
-const vrMenuMesh = new THREE.Mesh(vrMenuGeo, vrMenuMat);
-
-vrMenuMesh.position.set(-0.35, -0.1, -0.85);
-vrMenuMesh.rotation.y = Math.PI / 12;
-vrMenuMesh.renderOrder = 999;
-camera.add(vrMenuMesh);
-
-let vrItemBounds = [];
-
-function updateVRMenu() {
-  if (!renderer.xr.isPresenting) {
-    vrMenuMesh.visible = false;
-    return;
-  }
-  vrMenuMesh.visible = true;
-  
-  vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
-  vrItemBounds = [];
-
-  if (!activeProject) {
-    vrMenuTexture.needsUpdate = true;
-    return;
-  }
-
-  vrMenuCtx.fillStyle = '#000000';
+const vrMenuSprite = new THREE.Sprite(vrMenuMaterial);
+vrMenuSprite.scale.set(0.6, 0.3, 1);
+vrMenuSprite.position.set(0, 0.25, -0.8); 
+// Menu position moved down in VR view
+vrMenuSprite.position.set(0, -0.15, -0.85); 
+vrMenuSprite.renderOrder = 999;
+vrMenuSprite.visible = false;
+camera.add(vrMenuSprite);
+@@ -343,29 +348,55 @@ <h2 id="overlay-title">Panorama View</h2>
+vrMenuSprite.visible = true;
+vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
+vrMenuCtx.fillStyle = '#000000';
   vrMenuCtx.font = '24px Arial, sans-serif';
-
-  let currentY = 40;
-  vrMenuCtx.fillText(activeProject.name.toUpperCase(), 20, currentY);
-
-  currentY += 40;
-
-  activeProject.panoramas.forEach((p) => {
-    const isCurrent = p.file === activePanoFile;
-    vrMenuCtx.font = isCurrent ? 'bold 22px Arial, sans-serif' : '22px Arial, sans-serif';
-    
-    const text = isCurrent ? '> ' + p.name.toUpperCase() : '  ' + p.name.toUpperCase();
-    vrMenuCtx.fillText(text, 20, currentY);
-
-    vrItemBounds.push({
-      type: 'pano',
-      file: p.file,
-      name: p.name,
-      minY: currentY - 24,
-      maxY: currentY + 8
-    });
-
-    currentY += 36;
-  });
-
-  currentY += 20;
-  vrMenuCtx.font = '18px Arial, sans-serif';
-  vrMenuCtx.fillText('← SWITCH PROJECT', 20, currentY);
-  vrItemBounds.push({
-    type: 'back',
-    minY: currentY - 20,
-    maxY: currentY + 10
-  });
-
-  vrMenuTexture.needsUpdate = true;
+  vrMenuCtx.font = '22px Arial, sans-serif';
+lines.forEach((line, i) => {
+    vrMenuCtx.fillText(line, 20, 40 + i * 36);
+    vrMenuCtx.fillText(line.toUpperCase(), 20, 36 + i * 34);
+});
+vrMenuTexture.needsUpdate = true;
 }
 
-// ── VR Selection ──────────────────────────────────────────────────
-function onVRSelect(event) {
-  if (!renderer.xr.isPresenting || !vrMenuMesh.visible) return;
-
-  const controller = event.target;
-  tempMatrix.identity().extractRotation(controller.matrixWorld);
-
-  raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-  raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-
-  const intersects = raycaster.intersectObject(vrMenuMesh);
-
-  if (intersects.length > 0) {
-    const uv = intersects[0].uv;
-    const canvasY = (1 - uv.y) * vrMenuCanvas.height;
-
-    for (const item of vrItemBounds) {
-      if (canvasY >= item.minY && canvasY <= item.maxY) {
-        if (item.type === 'pano') {
-          loadPanorama(item.file, `${activeProject.name} – ${item.name}`);
-        } else if (item.type === 'back') {
-          showStartScreen();
-        }
-        break;
-      }
-    }
-  }
-}
-
-// ── VR Stick Rotation ────────────────────────────────────────────
+// ── Panorama Kugel Geometry ──────────────────────────────────────
+// ── VR Controller Thumbstick Snap/Smooth Rotation ─────────────────
 let canRotateXR = true;
 
 function handleXRInput() {
@@ -469,6 +326,7 @@ function handleXRInput() {
   for (const source of session.inputSources) {
     if (source.gamepad) {
       const axes = source.gamepad.axes;
+      // Axis 2 or 0 is usually the horizontal thumbstick
       const thumbstickX = axes[2] !== undefined ? axes[2] : axes[0];
       
       if (Math.abs(thumbstickX) > 0.5) {
@@ -491,7 +349,8 @@ const sphereMat = new THREE.MeshBasicMaterial();
 const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(sphereMesh);
 
-// ── Drag & Rotation Controls (Desktop) ───────────────────────────
+// ── Drag & Rotation Controls ─────────────────────────────────────
+// ── Drag & Rotation Controls (Desktop/Touch) ─────────────────────
 let isUserInteracting = false;
 let onPointerDownPointerX = 0, onPointerDownPointerY = 0;
 let lon = 0, onPointerDownLon = 0;
@@ -499,221 +358,126 @@ let lat = 0, onPointerDownLat = 0;
 let phi = 0, theta = 0;
 
 function onPointerStart(e) {
-  if (e.target.closest('#pano-menu-left') || e.target.closest('#overlay')) return;
-  isUserInteracting = true;
-  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-  onPointerDownPointerX = clientX;
-  onPointerDownPointerY = clientY;
-  onPointerDownLon = lon;
-  onPointerDownLat = lat;
-}
-
-function onPointerMove(e) {
-  if (!isUserInteracting) return;
-  const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-  const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-  lon = (onPointerDownPointerX - clientX) * 0.1 + onPointerDownLon;
-  lat = (clientY - onPointerDownPointerY) * 0.1 + onPointerDownLat;
-}
-
-function onPointerEnd() {
-  isUserInteracting = false;
-}
-
-canvas.addEventListener('pointerdown', onPointerStart);
+  // Wenn auf das linke Menü geklickt wird, keine 3D-Drehung auslösen
+if (e.target.closest('#pano-menu-left') || e.target.closest('#overlay')) return;
+isUserInteracting = true;
+const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+@@ -392,7 +423,7 @@ <h2 id="overlay-title">Panorama View</h2>
 canvas.addEventListener('pointermove', onPointerMove);
 canvas.addEventListener('pointerup', onPointerEnd);
 
+// ── UI Interaktionen ─────────────────────────────────────────────
 // ── UI Interactions ──────────────────────────────────────────────
 bSlider.addEventListener('input', () => {
-  const v = parseFloat(bSlider.value);
-  bVal.textContent = v.toFixed(1);
-  renderer.toneMappingExposure = v;
-});
-
-fovSlider.addEventListener('input', () => {
-  const v = parseInt(fovSlider.value);
-  fovVal.textContent = v + '°';
-  camera.fov = v;
-  camera.updateProjectionMatrix();
-});
-
-bgColor.addEventListener('input', () => {
-  scene.background = new THREE.Color(bgColor.value);
-});
-
-function showOverlay() {
-  overlayEl.classList.remove('hidden');
-  crosshair.classList.remove('visible');
-  escHint.classList.remove('visible');
+const v = parseFloat(bSlider.value);
+bVal.textContent = v.toFixed(1);
+@@ -449,14 +480,14 @@ <h2 id="overlay-title">Panorama View</h2>
+escHint.classList.remove('visible');
 }
 
-function hideOverlay() {
-  overlayEl.classList.add('hidden');
-  if (!isTouch) {
-    crosshair.classList.add('visible');
-    escHint.classList.add('visible');
-  } else {
-    pauseBtn.style.display = 'block';
-  }
-}
-
-startBtn.addEventListener('click', hideOverlay);
-pauseBtn.addEventListener('click', showOverlay);
-
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') showOverlay();
-});
-
-newFileBtn.addEventListener('click', showStartScreen);
-menuBackToProjBtn.addEventListener('click', showStartScreen);
-
-loaderBackBtn.addEventListener('click', () => {
-  loaderEl.classList.add('hidden');
-  showStartScreen();
-});
-
-function showStartScreen() {
-  overlayEl.classList.add('hidden');
-  panoMenuLeft.classList.add('hidden');
-  uploadScreen.classList.remove('hidden');
-  crosshair.classList.remove('visible');
-  escHint.classList.remove('visible');
-}
-
-// ── Bind Click Events to HTML Cards ──────────────────────────────
-document.querySelectorAll('.room-card').forEach((card) => {
-  card.addEventListener('click', () => {
-    const projId = card.getAttribute('data-project-id');
-    const proj = PROJECTS.find((p) => p.id === projId);
-    if (proj) selectProject(proj);
-  });
-});
+// ── Startseite Projektauswahl ────────────────────────────────────
+// ── Build Projects Selection Grid ─────────────────────────────────
+function buildProjectGrid() {
+roomGrid.innerHTML = '';
+PROJECTS.forEach((proj) => {
+const card = document.createElement('div');
+card.className = 'room-card';
+card.innerHTML = `
+      <span class="room-category">Projekt</span>
+      <span class="room-category">Project</span>
+     <span class="room-name">${proj.name}</span>
+   `;
+card.addEventListener('click', () => selectProject(proj));
+@@ -467,14 +498,13 @@ <h2 id="overlay-title">Panorama View</h2>
 
 function selectProject(project) {
-  activeProject = project;
-  if (project.panoramas.length > 0) {
-    const firstPano = project.panoramas[0];
-    loadPanorama(firstPano.file, `${project.name} – ${firstPano.name}`);
-  }
+activeProject = project;
+  // Lädt direkt das erste Panorama des Projekts
+if (project.panoramas.length > 0) {
+const firstPano = project.panoramas[0];
+loadPanorama(firstPano.file, `${project.name} – ${firstPano.name}`);
+}
 }
 
-// ── Left Menu Generation (2D Desktop) ─────────────────────────────
+// ── Linkes Menü aufbauen & aktualisieren ──────────────────────────
+// ── Left Menu Generation ─────────────────────────────────────────
 function updateLeftMenu() {
-  if (!activeProject) {
-    panoMenuLeft.classList.add('hidden');
-    return;
-  }
-
-  menuProjectTitle.textContent = activeProject.name;
-  panoLinksContainer.innerHTML = '';
-
-  activeProject.panoramas.forEach((pano) => {
-    const btn = document.createElement('button');
-    btn.className = 'pano-link' + (pano.file === activePanoFile ? ' active' : '');
-    btn.textContent = pano.name;
-    btn.addEventListener('click', () => {
-      loadPanorama(pano.file, `${activeProject.name} – ${pano.name}`);
-    });
-    panoLinksContainer.appendChild(btn);
-  });
-
-  panoMenuLeft.classList.remove('hidden');
+if (!activeProject) {
+panoMenuLeft.classList.add('hidden');
+@@ -497,7 +527,7 @@ <h2 id="overlay-title">Panorama View</h2>
+panoMenuLeft.classList.remove('hidden');
 }
 
+// ── Bild Laden ───────────────────────────────────────────────────
 // ── Image Loading ────────────────────────────────────────────────
 const textureLoader = new THREE.TextureLoader();
 
 function loadPanorama(url, displayName) {
-  activePanoFile = url;
-  uploadScreen.classList.add('hidden');
-  overlayEl.classList.add('hidden');
-  loaderEl.classList.remove('hidden');
-  loaderBackBtn.style.display = 'none';
-  progressBar.style.width = '30%';
+@@ -507,7 +537,7 @@ <h2 id="overlay-title">Panorama View</h2>
+loaderEl.classList.remove('hidden');
+loaderBackBtn.style.display = 'none';
+progressBar.style.width = '30%';
+  statusText.textContent = 'Bild wird geladen...';
   statusText.textContent = 'Loading Panorama...';
 
-  textureLoader.load(
-    url,
-    (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      sphereMat.map = texture;
-      sphereMat.needsUpdate = true;
-      progressBar.style.width = '100%';
+textureLoader.load(
+url,
+@@ -516,10 +546,9 @@ <h2 id="overlay-title">Panorama View</h2>
+sphereMat.map = texture;
+sphereMat.needsUpdate = true;
+progressBar.style.width = '100%';
+      overlayTitle.textContent = displayName || 'Panorama';
       overlayTitle.textContent = displayName || 'Panorama View';
-      loaderEl.classList.add('hidden');
-      
-      updateLeftMenu();
-      updateVRMenu();
+loaderEl.classList.add('hidden');
 
-      if (!isTouch) {
-        crosshair.classList.add('visible');
-        escHint.classList.add('visible');
-      }
-    },
-    (xhr) => {
-      if (xhr.total > 0) {
-        const p = (xhr.loaded / xhr.total) * 100;
-        progressBar.style.width = p.toFixed(0) + '%';
-      }
-    },
-    (err) => {
+      // Linkes Menü aktualisieren und anzeigen
+updateLeftMenu();
+
+if (!isTouch) {
+@@ -534,15 +563,15 @@ <h2 id="overlay-title">Panorama View</h2>
+}
+},
+(err) => {
+      console.error('Fehler beim Laden:', err);
       console.error('Loading error:', err);
-      progressBar.style.width = '0%';
+progressBar.style.width = '0%';
+      statusText.textContent = `Datei "${url}" konnte nicht geladen werden. Bitte Dateipfad/Kleinschreibung prüfen.`;
       statusText.textContent = `File "${url}" could not be loaded. Please check filepath/casing.`;
-      loaderBackBtn.style.display = 'inline-block';
-    }
-  );
+loaderBackBtn.style.display = 'inline-block';
+}
+);
 }
 
+// Upload Handling für eigene Dateien
 // File Upload
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('dragover');
-  const f = e.dataTransfer.files[0]; if(f) loadFile(f);
-});
-dropZone.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', e => {
-  const f = e.target.files[0]; if(f) loadFile(f); fileInput.value = '';
-});
-
-function loadFile(file) {
-  activeProject = null;
-  const url = URL.createObjectURL(file);
-  loadPanorama(url, file.name);
-}
-
-// ── Render Loop ──────────────────────────────────────────────────
+@@ -564,12 +593,22 @@ <h2 id="overlay-title">Panorama View</h2>
 function animate() {
-  renderer.setAnimationLoop(() => {
-    if (renderer.xr.isPresenting) {
+renderer.setAnimationLoop(() => {
+if (renderer.xr.isPresenting) {
+      updateVRMenu([
+        activeProject ? activeProject.name.toUpperCase() : 'PANORAMA VIEW',
       handleXRInput();
-      updateVRMenu();
-    } else {
-      lat = Math.max(-85, Math.min(85, lat));
-      phi = THREE.MathUtils.degToRad(90 - lat);
-      theta = THREE.MathUtils.degToRad(lon);
+      
+      const lines = [
+        activeProject ? activeProject.name : 'PANORAMA VIEW',
+'-------------------',
+        'Blickrichtung drehen',
+        'Trigger: Auswählen'
+      ]);
+        'Stick: Rotate View'
+      ];
+      
+      if (activeProject) {
+        activeProject.panoramas.forEach(p => {
+          const prefix = (p.file === activePanoFile) ? '> ' : '  ';
+          lines.push(prefix + p.name);
+        });
+      }
 
-      camera.position.x = 100 * Math.sin(phi) * Math.cos(theta);
-      camera.position.y = 100 * Math.cos(phi);
-      camera.position.z = 100 * Math.sin(phi) * Math.sin(theta);
-      camera.lookAt(0, 0, 0);
-    }
-
-    renderer.render(scene, camera);
-  });
-}
-
-animate();
-
-// ── Resize ───────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
-</body>
-</html>
+      updateVRMenu(lines);
+} else {
+lat = Math.max(-85, Math.min(85, lat));
+phi = THREE.MathUtils.degToRad(90 - lat);
