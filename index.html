@@ -124,11 +124,6 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 .new-file-btn{padding:10px 20px;background:transparent;border:1px solid #cccccc;color:#555555;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:border-color 0.2s,color 0.2s}
 .new-file-btn:hover,.new-file-btn:active{border-color:#888888;color:#888888}
 
-#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.3s ease}
-#crosshair.visible{opacity:0.6}
-#crosshair::before,#crosshair::after{content:'';position:absolute;background:#000000}
-#crosshair::before{width:1px;height:100%;left:50%;top:0}
-#crosshair::after{width:100%;height:1px;top:50%;left:0}
 
 #canvas{display:block;position:absolute;inset:0;touch-action:none}
 
@@ -137,15 +132,10 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
 #pause-btn{position:absolute;top:14px;right:16px;z-index:30;display:none;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#888888;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
 
-/* ── Scroll Buttons + Iframe Section ───────────────────────────── */
-#scroll-down-btn{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:45;padding:8px 16px;background:rgba(255,255,255,0.85);border:1px solid #bbbbbb;color:#000000;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
-#scroll-down-btn:hover{border-color:#000000}
-#more-section{background:#ffffff}
-.more-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid #dddddd}
-.more-title{font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:#000000}
+/* ── Iframe auf der Startseite ─────────────────────────────────── */
+#upload-screen iframe{display:block;flex-shrink:0}
 .scroll-link{background:none;border:none;padding:0;color:#000000;font-family:inherit;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;opacity:0.7}
 .scroll-link:hover{opacity:1;text-decoration:underline}
-#more-section iframe{display:block}
 
 /* ── Panorama Rotation Tool (vertical axis only) ───────────────── */
 #align-panel{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);z-index:46;width:min(380px,92%);padding:14px 16px;background:rgba(255,255,255,0.92);border:1px solid #bbbbbb;backdrop-filter:blur(4px);display:flex;flex-direction:column;gap:10px}
@@ -207,6 +197,10 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
     <p>Drop 360° image here or click to upload</p>
   </div>
   <input type="file" id="file-input" accept="image/*" />
+
+  <div class="divider-small"></div>
+
+  <iframe src="https://glb-viewer.comeonbert.de/pano.php?id=227233264d45d6eba6e8e29a75cb118c5051b199a605aa2f" style="width:100%;height:700px;border:0;border-radius:0;background:#fff" title="Teufelsberg, Berlin" allow="fullscreen" loading="lazy"></iframe>
 </div>
 
 <!-- ── Left Side Floating Text Menu ───────────────────────────── -->
@@ -246,13 +240,12 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   </div>
 </div>
 
-<div id="crosshair"></div>
 <canvas id="canvas"></canvas>
 <div id="esc-hint">ESC - Pause</div>
 <button id="pause-btn">&#9776; Pause</button>
 <div id="align-panel" class="hidden">
   <div class="menu-title">Rotate Panorama (vertical axis)</div>
-  <div class="align-hint">Image under the crosshair = start view</div>
+  <div class="align-hint">Image at screen center = start view</div>
   <div class="align-row">
     <input type="range" id="yaw-slider" min="-180" max="180" step="0.5" value="0" />
     <span id="yaw-value">0°</span>
@@ -264,17 +257,9 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
     <button class="scroll-link" id="yaw-close">Close</button>
   </div>
 </div>
-<button id="scroll-down-btn">&darr; Teufelsberg, Berlin</button>
 
 </div><!-- /#viewer -->
 
-<section id="more-section">
-  <div class="more-header">
-    <span class="more-title">Teufelsberg, Berlin</span>
-    <button class="scroll-link" id="scroll-up-btn">&uarr; Back to Panorama View</button>
-  </div>
-  <iframe src="https://glb-viewer.comeonbert.de/pano.php?id=227233264d45d6eba6e8e29a75cb118c5051b199a605aa2f" style="width:100%;height:700px;border:0;border-radius:0;background:#fff" title="Teufelsberg, Berlin" allow="fullscreen" loading="lazy"></iframe>
-</section>
 
 <script type="importmap">
 {
@@ -297,7 +282,7 @@ const PROJECTS = [
     id: 'karlshorst',
     name: 'Karlshorst',
     panoramas: [
-      { id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg', yaw: 141.5 },
+      { id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg', yaw: 0 },
       { id: 'pano_02', name: 'Pano 02', file: 'karlshorst/pano_02.jpg', yaw: 0 }
     ]
   },
@@ -322,7 +307,6 @@ const loaderBackBtn     = document.getElementById('loader-back-btn');
 const uploadScreen      = document.getElementById('upload-screen');
 const overlayEl         = document.getElementById('overlay');
 const overlayTitle      = document.getElementById('overlay-title');
-const crosshair         = document.getElementById('crosshair');
 const escHint           = document.getElementById('esc-hint');
 const progressBar       = document.getElementById('progress-fill');
 const statusText        = document.getElementById('loader-status');
@@ -555,16 +539,12 @@ alignBtn.addEventListener('click', () => {
   hideOverlay();
   lon = 0;
   lat = 0;
-  crosshair.classList.add('visible');
   alignPanel.classList.remove('hidden');
 });
 
 yawSlider.addEventListener('input', () => applyYaw(parseFloat(yawSlider.value)));
 yawReset.addEventListener('click', () => applyYaw(loadedYaw));
-yawClose.addEventListener('click', () => {
-  alignPanel.classList.add('hidden');
-  if (isTouch) crosshair.classList.remove('visible');
-});
+yawClose.addEventListener('click', () => alignPanel.classList.add('hidden'));
 yawCode.addEventListener('focus', () => yawCode.select());
 
 yawCopy.addEventListener('click', async () => {
@@ -576,14 +556,6 @@ yawCopy.addEventListener('click', async () => {
   }
   yawCopy.textContent = 'Copied';
   setTimeout(() => { yawCopy.textContent = 'Copy'; }, 1200);
-});
-
-// ── Scroll zwischen Viewer und Iframe ────────────────────────────
-document.getElementById('scroll-down-btn').addEventListener('click', () => {
-  document.getElementById('more-section').scrollIntoView({ behavior: 'smooth' });
-});
-document.getElementById('scroll-up-btn').addEventListener('click', () => {
-  viewerEl.scrollIntoView({ behavior: 'smooth' });
 });
 
 // ── UI Interactions ──────────────────────────────────────────────
@@ -606,14 +578,12 @@ bgColor.addEventListener('input', () => {
 
 function showOverlay() {
   overlayEl.classList.remove('hidden');
-  crosshair.classList.remove('visible');
   escHint.classList.remove('visible');
 }
 
 function hideOverlay() {
   overlayEl.classList.add('hidden');
   if (!isTouch) {
-    crosshair.classList.add('visible');
     escHint.classList.add('visible');
   } else {
     pauseBtn.style.display = 'block';
@@ -640,7 +610,6 @@ function showStartScreen() {
   overlayEl.classList.add('hidden');
   panoMenuLeft.classList.add('hidden');
   uploadScreen.classList.remove('hidden');
-  crosshair.classList.remove('visible');
   escHint.classList.remove('visible');
 }
 
@@ -722,7 +691,6 @@ function loadPanorama(url, displayName) {
       updateLeftMenu();
 
       if (!isTouch) {
-        crosshair.classList.add('visible');
         escHint.classList.add('visible');
       }
     },
