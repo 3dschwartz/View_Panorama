@@ -118,7 +118,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 .settings-grid input[type=range]{width:100%;accent-color:#000000;cursor:pointer}
 .settings-grid span{color:#000000;text-align:left;font-size:13px;white-space:nowrap}
 .divider{width:min(320px,88vw);height:1px;background:#dddddd;margin:2px 0}
-.btn-row{display:flex;gap:12px;margin-top:4px}
+.btn-row{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:4px}
 .start-btn{padding:10px 32px;background:transparent;border:1px solid #000000;color:#000000;font-size:13px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,color 0.2s}
 .start-btn:hover,.start-btn:active{background:#000000;color:#ffffff}
 .new-file-btn{padding:10px 20px;background:transparent;border:1px solid #cccccc;color:#555555;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:border-color 0.2s,color 0.2s}
@@ -146,6 +146,15 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 .scroll-link{background:none;border:none;padding:0;color:#000000;font-family:inherit;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;opacity:0.7}
 .scroll-link:hover{opacity:1;text-decoration:underline}
 #more-section iframe{display:block}
+
+/* ── Panorama Rotation Tool (vertical axis only) ───────────────── */
+#align-panel{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);z-index:46;width:min(380px,92%);padding:14px 16px;background:rgba(255,255,255,0.92);border:1px solid #bbbbbb;backdrop-filter:blur(4px);display:flex;flex-direction:column;gap:10px}
+#align-panel.hidden{display:none}
+.align-hint{font-size:12px;letter-spacing:0.08em;color:#888888;text-transform:uppercase;line-height:1.5}
+.align-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.align-row input[type=range]{flex:1;accent-color:#000000;cursor:pointer}
+#yaw-value{min-width:56px;text-align:right;color:#000000}
+#yaw-code{width:100%;border:1px solid #cccccc;background:#ffffff;color:#000000;font-family:monospace;font-size:12px;padding:6px}
 
 /* VR Button Integration */
 #VRButton {
@@ -233,6 +242,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   <div class="btn-row">
     <button class="start-btn" id="start-btn">Resume</button>
     <button class="new-file-btn" id="new-file-btn">Project Menu</button>
+    <button class="new-file-btn" id="align-btn">Rotate Panorama</button>
   </div>
 </div>
 
@@ -240,6 +250,20 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <canvas id="canvas"></canvas>
 <div id="esc-hint">ESC - Pause</div>
 <button id="pause-btn">&#9776; Pause</button>
+<div id="align-panel" class="hidden">
+  <div class="menu-title">Rotate Panorama (vertical axis)</div>
+  <div class="align-hint">Image under the crosshair = start view</div>
+  <div class="align-row">
+    <input type="range" id="yaw-slider" min="-180" max="180" step="0.5" value="0" />
+    <span id="yaw-value">0°</span>
+  </div>
+  <input type="text" id="yaw-code" readonly />
+  <div class="align-row">
+    <button class="scroll-link" id="yaw-reset">Reset</button>
+    <button class="scroll-link" id="yaw-copy">Copy</button>
+    <button class="scroll-link" id="yaw-close">Close</button>
+  </div>
+</div>
 <button id="scroll-down-btn">&darr; Teufelsberg, Berlin</button>
 
 </div><!-- /#viewer -->
@@ -266,23 +290,25 @@ import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
 // ── Projects Data (Karlshorst: 2 Panos / Teufelsberg: 4 Panos) ────
+// yaw = Drehung des Panoramas um die vertikale Achse in Grad (Startansicht).
+// Werte mit dem Tool 'Rotate Panorama' ermitteln und hier eintragen.
 const PROJECTS = [
   {
     id: 'karlshorst',
     name: 'Karlshorst',
     panoramas: [
-      { id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg' },
-      { id: 'pano_02', name: 'Pano 02', file: 'karlshorst/pano_02.jpg' }
+      { id: 'pano_01', name: 'Pano 01', file: 'karlshorst/pano_01.jpg', yaw: 0 },
+      { id: 'pano_02', name: 'Pano 02', file: 'karlshorst/pano_02.jpg', yaw: 0 }
     ]
   },
   {
     id: 'teufelsberg',
     name: 'Teufelsberg',
     panoramas: [
-      { id: 'pano_01', name: 'Pano 01', file: 'teufelsberg/pano_01.jpg' },
-      { id: 'pano_02', name: 'Pano 02', file: 'teufelsberg/pano_02.jpg' },
-      { id: 'pano_03', name: 'Pano 03', file: 'teufelsberg/pano_03.jpg' },
-      { id: 'pano_04', name: 'Pano 04', file: 'teufelsberg/pano_04.jpg' }
+      { id: 'pano_01', name: 'Pano 01', file: 'teufelsberg/pano_01.jpg', yaw: 0 },
+      { id: 'pano_02', name: 'Pano 02', file: 'teufelsberg/pano_02.jpg', yaw: 0 },
+      { id: 'pano_03', name: 'Pano 03', file: 'teufelsberg/pano_03.jpg', yaw: 0 },
+      { id: 'pano_04', name: 'Pano 04', file: 'teufelsberg/pano_04.jpg', yaw: 0 }
     ]
   }
 ];
@@ -312,6 +338,14 @@ const bgColor           = document.getElementById('bg-color');
 const pauseBtn          = document.getElementById('pause-btn');
 const roomGrid          = document.getElementById('room-grid');
 const viewerEl          = document.getElementById('viewer');
+const alignPanel        = document.getElementById('align-panel');
+const alignBtn          = document.getElementById('align-btn');
+const yawSlider         = document.getElementById('yaw-slider');
+const yawValue          = document.getElementById('yaw-value');
+const yawCode           = document.getElementById('yaw-code');
+const yawReset          = document.getElementById('yaw-reset');
+const yawCopy           = document.getElementById('yaw-copy');
+const yawClose          = document.getElementById('yaw-close');
 
 const panoMenuLeft      = document.getElementById('pano-menu-left');
 const menuProjectTitle  = document.getElementById('menu-project-title');
@@ -415,6 +449,22 @@ const sphereMat = new THREE.MeshBasicMaterial();
 const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
 scene.add(sphereMesh);
 
+// ── Panorama Yaw (nur vertikale Achse) ───────────────────────────
+// Positiver Wert = Bildinhalt wandert nach rechts.
+let currentYaw = 0;
+let activePanoEntry = null;
+let loadedYaw = 0;
+
+function applyYaw(deg) {
+  currentYaw = deg;
+  sphereMesh.rotation.y = -THREE.MathUtils.degToRad(deg);
+  yawSlider.value = deg;
+  yawValue.textContent = deg.toFixed(1) + '°';
+  yawCode.value = activePanoEntry
+    ? `{ id: '${activePanoEntry.id}', name: '${activePanoEntry.name}', file: '${activePanoEntry.file}', yaw: ${deg} }`
+    : `yaw: ${deg}`;
+}
+
 // ── Drag & Rotation Controls (Desktop/Touch) ─────────────────────
 let isUserInteracting = false;
 let onPointerDownPointerX = 0, onPointerDownPointerY = 0;
@@ -500,6 +550,34 @@ canvas.addEventListener('wheel', (e) => {
 
 canvas.addEventListener('gesturestart', (e) => e.preventDefault()); // iOS: kein Browser-Zoom
 
+// ── Rotate-Panorama-Tool ─────────────────────────────────────────
+alignBtn.addEventListener('click', () => {
+  hideOverlay();
+  lon = 0;
+  lat = 0;
+  crosshair.classList.add('visible');
+  alignPanel.classList.remove('hidden');
+});
+
+yawSlider.addEventListener('input', () => applyYaw(parseFloat(yawSlider.value)));
+yawReset.addEventListener('click', () => applyYaw(loadedYaw));
+yawClose.addEventListener('click', () => {
+  alignPanel.classList.add('hidden');
+  if (isTouch) crosshair.classList.remove('visible');
+});
+yawCode.addEventListener('focus', () => yawCode.select());
+
+yawCopy.addEventListener('click', async () => {
+  yawCode.select();
+  try {
+    await navigator.clipboard.writeText(yawCode.value);
+  } catch (err) {
+    document.execCommand('copy');
+  }
+  yawCopy.textContent = 'Copied';
+  setTimeout(() => { yawCopy.textContent = 'Copy'; }, 1200);
+});
+
 // ── Scroll zwischen Viewer und Iframe ────────────────────────────
 document.getElementById('scroll-down-btn').addEventListener('click', () => {
   document.getElementById('more-section').scrollIntoView({ behavior: 'smooth' });
@@ -558,6 +636,7 @@ loaderBackBtn.addEventListener('click', () => {
 });
 
 function showStartScreen() {
+  alignPanel.classList.add('hidden');
   overlayEl.classList.add('hidden');
   panoMenuLeft.classList.add('hidden');
   uploadScreen.classList.remove('hidden');
@@ -630,6 +709,12 @@ function loadPanorama(url, displayName) {
       texture.colorSpace = THREE.SRGBColorSpace;
       sphereMat.map = texture;
       sphereMat.needsUpdate = true;
+
+      activePanoEntry = activeProject ? activeProject.panoramas.find(p => p.file === url) || null : null;
+      loadedYaw = activePanoEntry && activePanoEntry.yaw ? activePanoEntry.yaw : 0;
+      applyYaw(loadedYaw);
+      lon = 0;
+      lat = 0;
       progressBar.style.width = '100%';
       overlayTitle.textContent = displayName || 'Panorama View';
       loaderEl.classList.add('hidden');
