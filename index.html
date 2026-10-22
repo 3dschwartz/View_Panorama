@@ -185,7 +185,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <div id="upload-screen">
   <h1>Panorama View</h1>
   <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Thumbstick Turn & Menu</p>
+  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom, Trigger Drag</p>
   
   <div class="room-grid" id="room-grid">
     <!-- Projects loaded dynamically -->
@@ -361,73 +361,165 @@ const vrDolly = new THREE.Object3D();
 scene.add(vrDolly);
 vrDolly.add(camera);
 
-// ── VR HUD Overlay (Lower Positioned) ────────────────────────────
-const vrMenuCanvas = document.createElement('canvas');
-vrMenuCanvas.width = 512;
-vrMenuCanvas.height = 256;
-const vrMenuCtx = vrMenuCanvas.getContext('2d');
-const vrMenuTexture = new THREE.CanvasTexture(vrMenuCanvas);
+// ── VR HUD Overlay (oben links, einklappbar) ─────────────────────
+function createHud(w, h, scaleW) {
+  const canvasEl = document.createElement('canvas');
+  canvasEl.width = w;
+  canvasEl.height = h;
+  const ctx = canvasEl.getContext('2d');
+  const tex = new THREE.CanvasTexture(canvasEl);
+  const mat = new THREE.SpriteMaterial({
+    map: tex, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(scaleW, scaleW * h / w, 1);
+  sprite.center.set(0, 1);                  // Anker: oben links
+  sprite.position.set(-0.50, 0.28, -0.85);  // Position im Blickfeld (links oben)
+  sprite.renderOrder = 999;
+  sprite.visible = false;
+  camera.add(sprite);
+  return { canvasEl, ctx, tex, sprite };
+}
 
-const vrMenuMaterial = new THREE.SpriteMaterial({
-  map: vrMenuTexture,
-  transparent: true,
-  opacity: 0.55,
-  depthTest: false,
-  depthWrite: false
-});
-
-const vrMenuSprite = new THREE.Sprite(vrMenuMaterial);
-vrMenuSprite.scale.set(0.6, 0.3, 1);
-// Menu position moved down in VR view
-vrMenuSprite.position.set(0, -0.15, -0.85); 
-vrMenuSprite.renderOrder = 999;
-vrMenuSprite.visible = false;
-camera.add(vrMenuSprite);
+const hudFull = createHud(512, 352, 0.5);   // ausgeklappt
+const hudMini = createHud(320, 64, 0.26);   // eingeklappt
+let vrMenuCollapsed = false;
+let lastHudKey = '';
 
 function updateVRMenu(lines) {
   if (!renderer.xr.isPresenting) {
-    vrMenuSprite.visible = false;
+    hudFull.sprite.visible = false;
+    hudMini.sprite.visible = false;
     return;
   }
-  vrMenuSprite.visible = true;
-  vrMenuCtx.clearRect(0, 0, vrMenuCanvas.width, vrMenuCanvas.height);
-  vrMenuCtx.fillStyle = '#000000';
-  vrMenuCtx.font = '22px Arial, sans-serif';
-  lines.forEach((line, i) => {
-    vrMenuCtx.fillText(line.toUpperCase(), 20, 36 + i * 34);
-  });
-  vrMenuTexture.needsUpdate = true;
+  hudFull.sprite.visible = !vrMenuCollapsed;
+  hudMini.sprite.visible = vrMenuCollapsed;
+
+  const key = vrMenuCollapsed + '|' + lines.join('|');
+  if (key === lastHudKey) return;           // nur neu zeichnen, wenn sich etwas ändert
+  lastHudKey = key;
+
+  const hud = vrMenuCollapsed ? hudMini : hudFull;
+  hud.ctx.clearRect(0, 0, hud.canvasEl.width, hud.canvasEl.height);
+  hud.ctx.fillStyle = '#000000';
+  if (vrMenuCollapsed) {
+    hud.ctx.font = '26px Arial, sans-serif';
+    hud.ctx.fillText('MENU  [A/B]', 14, 42);
+  } else {
+    hud.ctx.font = '22px Arial, sans-serif';
+    lines.forEach((line, i) => hud.ctx.fillText(line.toUpperCase(), 20, 34 + i * 29));
+  }
+  hud.tex.needsUpdate = true;
 }
 
-// ── VR Controller Thumbstick Snap/Smooth Rotation ─────────────────
-let canRotateXR = true;
+// ── VR: Zoom, Drehen, Ziehen ─────────────────────────────────────
+// Im VR ist das Sichtfeld durch die Brille fest. Zoom = Betrachter wandert
+// Richtung Panoramawand (Mitte des Blicks bleibt, Rand wird verzerrter).
+const SPHERE_RADIUS = 500;
+const VR_ZOOM_MAX = 3;
+let vrZoom = 1;
+const vrZoomDir = new THREE.Vector3(0, 0, -1);
 
-function handleXRInput() {
+function applyVRZoom() {
+  const d = SPHERE_RADIUS * (1 - 1 / vrZoom);   // Vergrößerung in Blickrichtung = vrZoom
+  vrDolly.position.copy(vrZoomDir).multiplyScalar(d);
+}
+
+function resetVRView() {
+  vrZoom = 1;
+  vrDolly.position.set(0, 0, 0);
+}
+
+// Controller-Strahlen: Trigger gedrückt halten und bewegen = Bild ziehen (nur um die vertikale Achse)
+const rayLineGeo = new THREE.BufferGeometry().setFromPoints([
+  new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -5)
+]);
+let dragController = null;
+let dragLastYaw = 0;
+
+function controllerYaw(c) {
+  const d = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quaternion);
+  return Math.atan2(-d.x, -d.z);
+}
+
+for (let i = 0; i < 2; i++) {
+  const c = renderer.xr.getController(i);
+  const line = new THREE.Line(rayLineGeo, new THREE.LineBasicMaterial({ color: 0x00c8ff }));
+  line.visible = false;
+  c.add(line);
+  c.addEventListener('connected', () => { line.visible = true; });
+  c.addEventListener('disconnected', () => { line.visible = false; });
+  c.addEventListener('selectstart', () => {
+    if (dragController) return;
+    dragController = c;
+    dragLastYaw = controllerYaw(c);
+  });
+  c.addEventListener('selectend', () => {
+    if (dragController === c) dragController = null;
+  });
+  vrDolly.add(c);
+}
+
+renderer.xr.addEventListener('sessionstart', resetVRView);
+renderer.xr.addEventListener('sessionend', () => {
+  resetVRView();
+  vrDolly.rotation.set(0, 0, 0);
+  dragController = null;
+  hudFull.sprite.visible = false;
+  hudMini.sprite.visible = false;
+  lastHudKey = '';
+});
+
+const snapLatch = { left: true, right: true };
+const menuBtnLatch = { left: false, right: false };
+
+function handleXRInput(dt) {
   if (!renderer.xr.isPresenting) return;
   const session = renderer.xr.getSession();
   if (!session) return;
 
+  // Ziehen: Bild folgt dem Strahl
+  if (dragController) {
+    const yaw = controllerYaw(dragController);
+    const delta = dragLastYaw - yaw;
+    vrDolly.rotation.y += Math.atan2(Math.sin(delta), Math.cos(delta));
+    dragLastYaw = yaw;
+  }
+
   for (const source of session.inputSources) {
-    if (source.gamepad) {
-      const axes = source.gamepad.axes;
-      // Axis 2 or 0 is usually the horizontal thumbstick
-      const thumbstickX = axes[2] !== undefined ? axes[2] : axes[0];
-      
-      if (Math.abs(thumbstickX) > 0.5) {
-        if (canRotateXR) {
-          const rotationAngle = thumbstickX > 0 ? -Math.PI / 6 : Math.PI / 6;
-          vrDolly.rotation.y += rotationAngle;
-          canRotateXR = false;
-        }
-      } else if (Math.abs(thumbstickX) < 0.2) {
-        canRotateXR = true;
+    const gp = source.gamepad;
+    if (!gp) continue;
+    const hand = source.handedness === 'left' ? 'left' : 'right';
+    const axes = gp.axes;
+    const stickX = axes[2] !== undefined ? axes[2] : axes[0];
+    const stickY = axes[3] !== undefined ? axes[3] : axes[1];
+
+    // Drehen in 30°-Schritten (beide Sticks, links/rechts)
+    if (Math.abs(stickX) > 0.5 && Math.abs(stickX) > Math.abs(stickY)) {
+      if (snapLatch[hand]) {
+        vrDolly.rotation.y += stickX > 0 ? -Math.PI / 6 : Math.PI / 6;
+        snapLatch[hand] = false;
       }
+    } else if (Math.abs(stickX) < 0.2) {
+      snapLatch[hand] = true;
     }
+
+    // Zoom: rechter Stick hoch = hineinzoomen, runter = herauszoomen
+    if (source.handedness === 'right' && Math.abs(stickY) > 0.15) {
+      if (vrZoom <= 1.001 && stickY < 0) camera.getWorldDirection(vrZoomDir); // Zoomzentrum = aktueller Blick
+      vrZoom = THREE.MathUtils.clamp(vrZoom * Math.exp(-stickY * dt), 1, VR_ZOOM_MAX);
+      applyVRZoom();
+    }
+
+    // Menü ein-/ausklappen: A/B (rechts) bzw. X/Y (links)
+    const pressed = (gp.buttons[4] && gp.buttons[4].pressed) || (gp.buttons[5] && gp.buttons[5].pressed);
+    if (pressed && !menuBtnLatch[hand]) vrMenuCollapsed = !vrMenuCollapsed;
+    menuBtnLatch[hand] = !!pressed;
   }
 }
 
 // ── Panorama Sphere ──────────────────────────────────────────────
-const sphereGeo = new THREE.SphereGeometry(500, 60, 40);
+const sphereGeo = new THREE.SphereGeometry(SPHERE_RADIUS, 60, 40);
 sphereGeo.scale(-1, 1, 1);
 const sphereMat = new THREE.MeshBasicMaterial();
 const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
@@ -684,6 +776,7 @@ function loadPanorama(url, displayName) {
       applyYaw(loadedYaw);
       lon = 0;
       lat = 0;
+      resetVRView();
       progressBar.style.width = '100%';
       overlayTitle.textContent = displayName || 'Panorama View';
       loaderEl.classList.add('hidden');
@@ -729,14 +822,21 @@ function loadFile(file) {
 
 // ── Render Loop ──────────────────────────────────────────────────
 function animate() {
-  renderer.setAnimationLoop(() => {
+  let lastTime = 0;
+  renderer.setAnimationLoop((time) => {
+    const dt = lastTime ? Math.min((time - lastTime) / 1000, 0.1) : 0.016;
+    lastTime = time;
+
     if (renderer.xr.isPresenting) {
-      handleXRInput();
+      handleXRInput(dt);
       
       const lines = [
         activeProject ? activeProject.name : 'PANORAMA VIEW',
         '-------------------',
-        'Stick: Rotate View'
+        'Stick L/R: Turn',
+        'R-Stick Up/Down: Zoom ' + vrZoom.toFixed(1) + 'x',
+        'Trigger + Move: Drag View',
+        'A/B: Hide Menu'
       ];
       
       if (activeProject) {
