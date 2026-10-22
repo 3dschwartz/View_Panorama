@@ -185,7 +185,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <div id="upload-screen">
   <h1>Panorama View</h1>
   <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom, Trigger Drag</p>
+  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom</p>
   
   <div class="room-grid" id="room-grid">
     <!-- Projects loaded dynamically -->
@@ -362,27 +362,27 @@ scene.add(vrDolly);
 vrDolly.add(camera);
 
 // ── VR HUD Overlay (oben links, einklappbar) ─────────────────────
-function createHud(w, h, scaleW) {
+function createHud(w, h, scaleW, opacity) {
   const canvasEl = document.createElement('canvas');
   canvasEl.width = w;
   canvasEl.height = h;
   const ctx = canvasEl.getContext('2d');
   const tex = new THREE.CanvasTexture(canvasEl);
   const mat = new THREE.SpriteMaterial({
-    map: tex, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false
+    map: tex, transparent: true, opacity: opacity, depthTest: false, depthWrite: false
   });
   const sprite = new THREE.Sprite(mat);
   sprite.scale.set(scaleW, scaleW * h / w, 1);
   sprite.center.set(0, 1);                  // Anker: oben links
-  sprite.position.set(-0.50, 0.28, -0.85);  // Position im Blickfeld (links oben)
+  sprite.position.set(-0.38, 0.28, -0.85);  // Position im Blickfeld (oben links, leicht Richtung Mitte)
   sprite.renderOrder = 999;
   sprite.visible = false;
   camera.add(sprite);
   return { canvasEl, ctx, tex, sprite };
 }
 
-const hudFull = createHud(512, 352, 0.5);   // ausgeklappt
-const hudMini = createHud(320, 64, 0.26);   // eingeklappt
+const hudFull = createHud(512, 320, 0.5, 0.55);   // ausgeklappt
+const hudMini = createHud(320, 64, 0.26, 0.9);    // eingeklappt (kräftiger, damit leicht auffindbar)
 let vrMenuCollapsed = false;
 let lastHudKey = '';
 
@@ -403,16 +403,24 @@ function updateVRMenu(lines) {
   hud.ctx.clearRect(0, 0, hud.canvasEl.width, hud.canvasEl.height);
   hud.ctx.fillStyle = '#000000';
   if (vrMenuCollapsed) {
-    hud.ctx.font = '26px Arial, sans-serif';
-    hud.ctx.fillText('MENU  [A/B]', 14, 42);
+    // Eingeklappt: schwarzer Button mit weißer Schrift
+    hud.ctx.fillRect(0, 0, hud.canvasEl.width, hud.canvasEl.height);
+    hud.ctx.fillStyle = '#ffffff';
+    hud.ctx.font = 'bold 26px Arial, sans-serif';
+    hud.ctx.fillText('MENU  [A/B]', 18, 42);
   } else {
     hud.ctx.font = '22px Arial, sans-serif';
     lines.forEach((line, i) => hud.ctx.fillText(line.toUpperCase(), 20, 34 + i * 29));
+    // Einklappen-Button rechts oben: schwarz, weiße Schrift
+    hud.ctx.fillRect(338, 8, 166, 36);
+    hud.ctx.fillStyle = '#ffffff';
+    hud.ctx.font = 'bold 20px Arial, sans-serif';
+    hud.ctx.fillText('[A/B] HIDE', 352, 33);
   }
   hud.tex.needsUpdate = true;
 }
 
-// ── VR: Zoom, Drehen, Ziehen ─────────────────────────────────────
+// ── VR: Zoom und Drehen ──────────────────────────────────────────
 // Im VR ist das Sichtfeld durch die Brille fest. Zoom = Betrachter wandert
 // Richtung Panoramawand (Mitte des Blicks bleibt, Rand wird verzerrter).
 const SPHERE_RADIUS = 500;
@@ -430,41 +438,10 @@ function resetVRView() {
   vrDolly.position.set(0, 0, 0);
 }
 
-// Controller-Strahlen: Trigger gedrückt halten und bewegen = Bild ziehen (nur um die vertikale Achse)
-const rayLineGeo = new THREE.BufferGeometry().setFromPoints([
-  new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -5)
-]);
-let dragController = null;
-let dragLastYaw = 0;
-
-function controllerYaw(c) {
-  const d = new THREE.Vector3(0, 0, -1).applyQuaternion(c.quaternion);
-  return Math.atan2(-d.x, -d.z);
-}
-
-for (let i = 0; i < 2; i++) {
-  const c = renderer.xr.getController(i);
-  const line = new THREE.Line(rayLineGeo, new THREE.LineBasicMaterial({ color: 0x00c8ff }));
-  line.visible = false;
-  c.add(line);
-  c.addEventListener('connected', () => { line.visible = true; });
-  c.addEventListener('disconnected', () => { line.visible = false; });
-  c.addEventListener('selectstart', () => {
-    if (dragController) return;
-    dragController = c;
-    dragLastYaw = controllerYaw(c);
-  });
-  c.addEventListener('selectend', () => {
-    if (dragController === c) dragController = null;
-  });
-  vrDolly.add(c);
-}
-
 renderer.xr.addEventListener('sessionstart', resetVRView);
 renderer.xr.addEventListener('sessionend', () => {
   resetVRView();
   vrDolly.rotation.set(0, 0, 0);
-  dragController = null;
   hudFull.sprite.visible = false;
   hudMini.sprite.visible = false;
   lastHudKey = '';
@@ -477,14 +454,6 @@ function handleXRInput(dt) {
   if (!renderer.xr.isPresenting) return;
   const session = renderer.xr.getSession();
   if (!session) return;
-
-  // Ziehen: Bild folgt dem Strahl
-  if (dragController) {
-    const yaw = controllerYaw(dragController);
-    const delta = dragLastYaw - yaw;
-    vrDolly.rotation.y += Math.atan2(Math.sin(delta), Math.cos(delta));
-    dragLastYaw = yaw;
-  }
 
   for (const source of session.inputSources) {
     const gp = source.gamepad;
@@ -834,9 +803,7 @@ function animate() {
         activeProject ? activeProject.name : 'PANORAMA VIEW',
         '-------------------',
         'Stick L/R: Turn',
-        'R-Stick Up/Down: Zoom ' + vrZoom.toFixed(1) + 'x',
-        'Trigger + Move: Drag View',
-        'A/B: Hide Menu'
+        'R-Stick Up/Down: Zoom ' + vrZoom.toFixed(1) + 'x'
       ];
       
       if (activeProject) {
