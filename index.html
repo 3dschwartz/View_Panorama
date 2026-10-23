@@ -185,7 +185,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <div id="upload-screen">
   <h1>Panorama View</h1>
   <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom</p>
+  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom, Trigger Next/Prev</p>
   
   <div class="room-grid" id="room-grid">
     <!-- Projects loaded dynamically -->
@@ -337,6 +337,7 @@ const panoLinksContainer = document.getElementById('pano-links-container');
 const menuBackToProjBtn = document.getElementById('menu-back-to-projects');
 
 let activeProject = null;
+let panoLoading = false;
 let activePanoFile = '';
 
 // ── Renderer ─────────────────────────────────────────────────────
@@ -382,7 +383,7 @@ function createHud(w, h, scaleW, opacity) {
 }
 
 const hudFull = createHud(512, 320, 0.5, 0.55);   // ausgeklappt
-const hudMini = createHud(320, 64, 0.26, 0.9);    // eingeklappt (kräftiger, damit leicht auffindbar)
+const hudMini = createHud(320, 64, 0.26, 0.8);    // eingeklappt
 let vrMenuCollapsed = false;
 let lastHudKey = '';
 
@@ -403,19 +404,21 @@ function updateVRMenu(lines) {
   hud.ctx.clearRect(0, 0, hud.canvasEl.width, hud.canvasEl.height);
   hud.ctx.fillStyle = '#000000';
   if (vrMenuCollapsed) {
-    // Eingeklappt: schwarzer Button mit weißer Schrift
-    hud.ctx.fillRect(0, 0, hud.canvasEl.width, hud.canvasEl.height);
-    hud.ctx.fillStyle = '#ffffff';
+    // Eingeklappt: weißer Rahmen, schwarze Schrift
+    hud.ctx.strokeStyle = '#ffffff';
+    hud.ctx.lineWidth = 4;
+    hud.ctx.strokeRect(2, 2, hud.canvasEl.width - 4, hud.canvasEl.height - 4);
     hud.ctx.font = 'bold 26px Arial, sans-serif';
     hud.ctx.fillText('MENU  [A/B]', 18, 42);
   } else {
     hud.ctx.font = '22px Arial, sans-serif';
     lines.forEach((line, i) => hud.ctx.fillText(line.toUpperCase(), 20, 34 + i * 29));
-    // Einklappen-Button rechts oben: schwarz, weiße Schrift
-    hud.ctx.fillRect(338, 8, 166, 36);
-    hud.ctx.fillStyle = '#ffffff';
+    // Einklappen-Button rechts oben: weißer Rahmen, schwarze Schrift
+    hud.ctx.strokeStyle = '#ffffff';
+    hud.ctx.lineWidth = 3;
+    hud.ctx.strokeRect(340, 8, 162, 36);
     hud.ctx.font = 'bold 20px Arial, sans-serif';
-    hud.ctx.fillText('[A/B] HIDE', 352, 33);
+    hud.ctx.fillText('[A/B] HIDE', 354, 33);
   }
   hud.tex.needsUpdate = true;
 }
@@ -449,6 +452,7 @@ renderer.xr.addEventListener('sessionend', () => {
 
 const snapLatch = { left: true, right: true };
 const menuBtnLatch = { left: false, right: false };
+const triggerLatch = { left: false, right: false };
 
 function handleXRInput(dt) {
   if (!renderer.xr.isPresenting) return;
@@ -484,6 +488,11 @@ function handleXRInput(dt) {
     const pressed = (gp.buttons[4] && gp.buttons[4].pressed) || (gp.buttons[5] && gp.buttons[5].pressed);
     if (pressed && !menuBtnLatch[hand]) vrMenuCollapsed = !vrMenuCollapsed;
     menuBtnLatch[hand] = !!pressed;
+
+    // Panorama wechseln: rechter Trigger = nächstes, linker Trigger = vorheriges
+    const trigger = !!(gp.buttons[0] && gp.buttons[0].pressed);
+    if (trigger && !triggerLatch[hand]) stepPanorama(hand === 'right' ? 1 : -1);
+    triggerLatch[hand] = trigger;
   }
 }
 
@@ -726,6 +735,7 @@ const textureLoader = new THREE.TextureLoader();
 
 function loadPanorama(url, displayName) {
   activePanoFile = url;
+  panoLoading = true;
   uploadScreen.classList.add('hidden');
   overlayEl.classList.add('hidden');
   loaderEl.classList.remove('hidden');
@@ -736,6 +746,7 @@ function loadPanorama(url, displayName) {
   textureLoader.load(
     url,
     (texture) => {
+      panoLoading = false;
       texture.colorSpace = THREE.SRGBColorSpace;
       sphereMat.map = texture;
       sphereMat.needsUpdate = true;
@@ -763,6 +774,7 @@ function loadPanorama(url, displayName) {
       }
     },
     (err) => {
+      panoLoading = false;
       console.error('Loading error:', err);
       progressBar.style.width = '0%';
       statusText.textContent = `File "${url}" could not be loaded. Please check filepath/casing.`;
@@ -789,6 +801,16 @@ function loadFile(file) {
   loadPanorama(url, file.name);
 }
 
+// VR: Panorama innerhalb des aktiven Projekts wechseln (am Ende wieder von vorn)
+function stepPanorama(step) {
+  if (!activeProject || panoLoading) return;
+  const list = activeProject.panoramas;
+  if (list.length < 2) return;
+  const idx = list.findIndex(p => p.file === activePanoFile);
+  const next = list[(idx + step + list.length) % list.length];
+  loadPanorama(next.file, `${activeProject.name} – ${next.name}`);
+}
+
 // ── Render Loop ──────────────────────────────────────────────────
 function animate() {
   let lastTime = 0;
@@ -807,11 +829,13 @@ function animate() {
       ];
       
       if (activeProject) {
+        lines.push('Trigger R/L: Next / Prev');
         activeProject.panoramas.forEach(p => {
           const prefix = (p.file === activePanoFile) ? '> ' : '  ';
           lines.push(prefix + p.name);
         });
       }
+      if (panoLoading) lines.push('Loading...');
 
       updateVRMenu(lines);
     } else {
