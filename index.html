@@ -21,8 +21,9 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 #upload-screen{position:absolute;inset:0;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:28px;z-index:90;overflow-y:auto;padding:40px 20px;touch-action:pan-y}
 #upload-screen.hidden{display:none}
 #upload-screen h1{font-size:13px;font-weight:400;letter-spacing:0.3em;text-transform:uppercase;color:#000000}
-#upload-screen .subtitle{font-size:13px;letter-spacing:0.2em;color:#555555;text-transform:uppercase;margin-top:-18px}
-#upload-screen .nav-hint{font-size:13px;letter-spacing:0.08em;color:#888888;text-align:center;line-height:1.6;margin-top:-14px;text-transform:uppercase}
+#upload-screen .subtitle{font-size:13px;letter-spacing:0.12em;color:#555555;margin-top:-18px}
+#upload-screen .nav-hint{font-size:13px;letter-spacing:0.05em;color:#888888;text-align:center;line-height:1.7;margin-top:-14px;max-width:min(600px,92vw)}
+#upload-screen .nav-hint span{display:block}
 
 .room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;width:min(600px,92vw)}
 .room-card{padding:22px 16px;background:transparent;border:1px solid #cccccc;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
@@ -32,9 +33,11 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
 .divider-small{width:min(320px,60vw);height:1px;background:#dddddd}
 
-#drop-zone{width:min(420px,85vw);height:60px;border:1px solid #cccccc;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:border-color 0.2s,background 0.2s}
-#drop-zone:hover,#drop-zone.dragover{border-color:#000000;background:rgba(0,0,0,0.04)}
-#drop-zone p{font-size:13px;letter-spacing:0.12em;color:#666666;text-transform:uppercase;text-align:left;line-height:1.4}
+/* Upload-Button: nutzt .room-card (gleiche Höhe) und die Breite einer Projekt-Karte */
+#drop-zone{width:calc((min(600px,92vw) - 14px) / 2)}
+#drop-zone.dragover{border-color:#000000;background:rgba(0,0,0,0.04)}
+#drop-zone .room-category,#drop-zone .room-name{text-transform:none}
+@media (max-width:580px){#drop-zone{width:min(600px,92vw)}}
 #file-input{display:none}
 
 /* ── Left Transparent Text Menu (Einheitliche Schrift) ───────────────── */
@@ -184,8 +187,12 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 <!-- ── Start Screen (Project Selection) ──────────────────────────── -->
 <div id="upload-screen">
   <h1>Panorama View</h1>
-  <p class="subtitle">Select a Project</p>
-  <p class="nav-hint">PC: Drag to Look Around, Wheel to Zoom / Mobile: Drag, Pinch to Zoom / VR: Stick Turn, Right Stick Zoom, Trigger Next/Prev</p>
+  <p class="subtitle">Select a project</p>
+  <p class="nav-hint">
+    <span>Desktop: Drag to look around, wheel to zoom</span>
+    <span>Mobile: Drag to look around, pinch to zoom</span>
+    <span>VR headset: Stick to turn, right stick to zoom, trigger for next/previous</span>
+  </p>
   
   <div class="room-grid" id="room-grid">
     <!-- Projects loaded dynamically -->
@@ -193,8 +200,9 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
   
   <div class="divider-small"></div>
   
-  <div id="drop-zone">
-    <p>Drop 360° image here or click to upload</p>
+  <div id="drop-zone" class="room-card">
+    <span class="room-category">Own panorama</span>
+    <span class="room-name">Click or drop 360° image</span>
   </div>
   <input type="file" id="file-input" accept="image/*" />
 
