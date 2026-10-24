@@ -578,7 +578,7 @@ function onPointerMove(e) {
 
   const k = camera.fov / 75; // bei starkem Zoom langsamer drehen
   lon = (onPointerDownPointerX - e.clientX) * 0.1 * k + onPointerDownLon;
-  lat = (e.clientY - onPointerDownPointerY) * 0.1 * k + onPointerDownLat;
+  lat = (onPointerDownPointerY - e.clientY) * 0.1 * k + onPointerDownLat; // Bild folgt der Maus (hoch = Bild nach oben)
 }
 
 function onPointerEnd(e) {
