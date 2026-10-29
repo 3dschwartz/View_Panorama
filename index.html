@@ -137,6 +137,7 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
 /* ── Iframe auf der Startseite ─────────────────────────────────── */
 #upload-screen iframe{display:block;flex-shrink:0}
+#upload-screen .iframe-note{width:min(600px,92vw);font-size:13px;letter-spacing:0.05em;line-height:1.7;color:#555555;text-align:center;margin-top:-14px}
 .scroll-link{background:none;border:none;padding:0;color:#000000;font-family:inherit;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;opacity:0.7}
 .scroll-link:hover{opacity:1;text-decoration:underline}
 
@@ -208,7 +209,9 @@ body{background:#ffffff;color:#000000;font-family:Arial,Helvetica,sans-serif;fon
 
   <div class="divider-small"></div>
 
-  <iframe src="https://glb-viewer.comeonbert.de/pano.php?id=227233264d45d6eba6e8e29a75cb118c5051b199a605aa2f" style="width:min(600px,92vw);height:338px;border:0;border-radius:0;background:#fff" title="Teufelsberg, Berlin" allow="fullscreen" loading="lazy"></iframe>
+  <p class="iframe-note">Dieses Beispiel zeigt, wie mithilfe eines iFrames das 360°-Panorama auf einer beliebigen Webseite dargestellt werden kann.</p>
+
+  <iframe src="https://view.cas-3d.de/pano.php?id=5fc1534f0090df6435d4c2836fc659ee23912991257c0df1" style="width:min(600px,92vw);height:700px;border:0;border-radius:0;background:#fff" title="Teufelsberg, Berlin" allow="fullscreen; xr-spatial-tracking" loading="lazy"></iframe>
 </div>
 
 <!-- ── Left Side Floating Text Menu ───────────────────────────── -->
